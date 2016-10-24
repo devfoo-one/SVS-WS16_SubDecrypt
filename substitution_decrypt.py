@@ -6,7 +6,6 @@ import sys
 from collections import defaultdict
 
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
-KEY = {}
 
 
 def get_text_from_file(path):
@@ -132,6 +131,8 @@ def get_top_initial_letters(cyphertext, separator=' ', n=None):
     Word separators must be space, or given.
 
     :param cyphertext: cyphertext
+    :param separator: word separator, default is space
+    :param n: return n letters
     :return: list of initial letters, ordered by occurrence
     """
     letter_counter = defaultdict(int)
@@ -146,6 +147,8 @@ def get_top_final_letters(cyphertext, separator=' ', n=None):
     Word separators must be space, or given.
 
     :param cyphertext: cyphertext
+    :param separator: word separator, default is space
+    :param n: return n letters
     :return: list of final letters, ordered by occurrence
     """
     letter_counter = defaultdict(int)
@@ -155,6 +158,25 @@ def get_top_final_letters(cyphertext, separator=' ', n=None):
 
 
 ##############################################################################
+
+# http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
+FREQ_single_letters = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
+FREQ_char_bigrams = ['th', 'er', 'on', 'an', 're', 'he', 'in', 'ed', 'nd', 'ha', 'at', 'en', 'es', 'of', 'or', 'nt',
+                     'ea', 'ti', 'to', 'it', 'st', 'io', 'le', 'is', 'ou', 'ar', 'as', 'de', 'rt', 've']
+FREQ_char_trigrams = ['the', 'and', 'tha', 'ent', 'ion', 'tio', 'for', 'nde', 'has', 'nce', 'edt', 'tis', 'oft', 'sth',
+                      'men']
+FREQ_char_doubles = ['ss', 'ee', 'tt', 'ff', 'll', 'mm', 'oo']
+FREQ_word_initial_chars = ['t', 'o', 'a', 'w', 'b', 'c', 'd', 's', 'f', 'm', 'r', 'h', 'i', 'y', 'e', 'g', 'l', 'n',
+                           'p', 'u', 'j', 'k']
+FREQ_word_final_chars = ['e', 's', 't', 'd', 'n', 'r', 'y', 'f', 'l', 'o', 'g', 'h', 'a', 'k', 'm', 'p', 'u', 'w']
+FREQ_words_one_char = ['a', 'i']
+FREQ_words_two_char = ['of', 'to', 'in', 'it', 'is', 'be', 'as', 'at', 'so', 'we', 'he', 'by', 'or', 'on', 'do', 'if',
+                       'me', 'my', 'up', 'an', 'go', 'no', 'us', 'am']
+FREQ_words_three_char = ['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'any', 'can', 'had', 'her', 'was',
+                         'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old',
+                         'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use']
+FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 'they', 'know', 'want', 'been', 'good',
+                        'much', 'some', 'time']
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 display_fancy('INPUT', cyphertext)
