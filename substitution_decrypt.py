@@ -125,6 +125,25 @@ def get_top_double_chars(cyphertext, n=None):
     return [x[0] for x in sorted(char_double_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
+def get_top_char_ngrams(cyphertext, ngram=2, separator=' ', n=None):
+    """
+    Get top n-grams, ordered by occurrence
+    Word separators must be space, or given.
+
+    :param cyphertext: cyphertext
+    :param ngram: n of ngrams
+    :param separator: word separator, default is space
+    :param n: return top n n-grams
+    :return: list of n-grams, ordered by occurrence
+    """
+    char_ngram_counter = defaultdict(int)
+    for word in cyphertext.split(separator):
+        for i in range(len(word) - (ngram - 1)):
+            _token = word[i:i + ngram]
+            char_ngram_counter[_token] += 1
+    return [x[0] for x in sorted(char_ngram_counter.items(), key=lambda x: x[1], reverse=True)][:n]
+
+
 def get_top_initial_letters(cyphertext, separator=' ', n=None):
     """
     Get top initial word letters.
@@ -160,7 +179,7 @@ def get_top_final_letters(cyphertext, separator=' ', n=None):
 ##############################################################################
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
-FREQ_single_letters = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
+FREQ_char_unigrams = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
 FREQ_char_bigrams = ['th', 'er', 'on', 'an', 're', 'he', 'in', 'ed', 'nd', 'ha', 'at', 'en', 'es', 'of', 'or', 'nt',
                      'ea', 'ti', 'to', 'it', 'st', 'io', 'le', 'is', 'ou', 'ar', 'as', 'de', 'rt', 've']
 FREQ_char_trigrams = ['the', 'and', 'tha', 'ent', 'ion', 'tio', 'for', 'nde', 'has', 'nce', 'edt', 'tis', 'oft', 'sth',
@@ -180,10 +199,49 @@ FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 display_fancy('INPUT', cyphertext)
-print(get_top_chars(cyphertext))
-print(get_top_short_words(cyphertext, 1))
-print(get_top_short_words(cyphertext, 2))
-print(get_top_short_words(cyphertext, 3))
-print(get_top_double_chars(cyphertext))
-print(get_top_initial_letters(cyphertext))
-print(get_top_final_letters(cyphertext))
+
+# try to find word separator
+sep = get_top_chars(cyphertext, 1)[0]
+cyphertext = apply_substitution_dictionary(cyphertext, {sep: ' '})
+display_fancy('SPACE DETECTION', cyphertext)
+
+# combine all candidates for all keys
+KEY_CANDIDATE = defaultdict(list)
+
+# analyse top char unigrams
+for doc, eng in zip(get_top_chars(cyphertext)[1:], FREQ_char_unigrams):
+    KEY_CANDIDATE[doc].append(eng)
+
+# analyse char doubles
+for doc, eng in zip(get_top_double_chars(cyphertext), FREQ_char_doubles):
+    KEY_CANDIDATE[doc[-1]].append(eng[:-1])
+    print(KEY_CANDIDATE)
+
+# analyse character bi- and trigrams
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=2), FREQ_char_bigrams):
+    for x, Y in zip(doc, eng):
+        KEY_CANDIDATE[x].append(Y)
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=3), FREQ_char_trigrams):
+    for x, Y in zip(doc, eng):
+        KEY_CANDIDATE[x].append(Y)
+
+# analyse short words
+for doc, eng in list(zip(get_top_short_words(cyphertext, length=1), FREQ_words_one_char)) + list(
+        zip(get_top_short_words(cyphertext, length=2), FREQ_words_two_char)) + list(
+        zip(get_top_short_words(cyphertext, length=3), FREQ_words_three_char)) + list(
+        zip(get_top_short_words(cyphertext, length=4), FREQ_words_four_char)):
+    print(doc, eng)
+    for x, Y in zip(doc, eng):
+        KEY_CANDIDATE[x].append(Y)
+
+# analyse initial/final characters
+for doc, eng in zip(get_top_initial_letters(cyphertext), FREQ_word_initial_chars):
+    KEY_CANDIDATE[doc].append(eng)
+for doc, eng in zip(get_top_final_letters(cyphertext), FREQ_word_final_chars):
+    KEY_CANDIDATE[doc].append(eng)
+
+
+print(KEY_CANDIDATE)
+
+for k, v in KEY_CANDIDATE.items():
+    print(k,' -> ',''.join(sorted(v)))
