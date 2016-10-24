@@ -7,6 +7,7 @@ from collections import defaultdict, Counter
 
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
 
+
 def get_text_from_file(path):
     """
     Gets text from text file.
@@ -176,6 +177,23 @@ def get_top_final_letters(cyphertext, separator=' ', n=None):
     return [x[0] for x in sorted(letter_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
+def generate_word_pattern(word):
+    """
+    Generates word pattern.
+
+    ('ADAM' -> (0,1,0,2)
+    :param word: String
+    :return: pattern tuple
+    """
+    chars = []
+    ret_val = []
+    for c in word:
+        if c not in chars:
+            chars.append(c)
+        ret_val.append(chars.index(c))
+    return tuple(ret_val)
+
+
 ##############################################################################
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
@@ -230,10 +248,12 @@ for doc, eng in zip(get_top_short_words(cyphertext, length=1), FREQ_words_one_ch
         WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 10)
 # analyse short(2) words WEIGHT = 0.1
 for doc, eng in zip(get_top_short_words(cyphertext, length=2), FREQ_words_two_char):
+    print(doc, eng)
     for x, Y in zip(doc, eng):
         WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 1)
 # analyse short(3) words WEIGHT = 0.4
 for doc, eng in zip(get_top_short_words(cyphertext, length=3), FREQ_words_three_char):
+    print(doc, eng)
     for x, Y in zip(doc, eng):
         WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 4)
 # analyse short(4) words WEIGHT 0.42
@@ -254,8 +274,11 @@ for cypher_char, candidates in WEIGHTED_KEY_CANDIDATES.items():
     candidate = sorted(Counter(candidates).items(), key=lambda x: x[1], reverse=True)[:1][0][0]
     candidate_count = sorted(Counter(candidates).items(), key=lambda x: x[1], reverse=True)[:1][0][1]
     total_candidate_count = len(candidates)
-    if total_candidate_count > 100 and candidate_count / total_candidate_count > 0.5:
-        print(cypher_char, candidate, len(candidates), '{:.2%}'.format(candidate_count / len(candidates)))
-        KEY_STATISTICS[cypher_char] = candidate
+    # if total_candidate_count > 100 and candidate_count / total_candidate_count > 0.5:
+    print(cypher_char, candidate, len(candidates), '{:.2%}'.format(candidate_count / len(candidates)))
+    KEY_STATISTICS[cypher_char] = candidate
 
 display_fancy('AFTER STATISTICS', apply_substitution_dictionary(cyphertext, KEY_STATISTICS))
+
+print(generate_word_pattern('abcdefg'))
+print(generate_word_pattern('alla'))
