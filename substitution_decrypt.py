@@ -79,88 +79,89 @@ def display_fancy(name, text, key=None):
     print('{:*^100}'.format(''))
 
 
-def stage1(cyphertext):
+def get_top_chars(cyphertext, n=None):
     """
-    Searches for most common characters and replaces them with the most common characters of the english language.
-    http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
-    :param c: cyphertext after stage 1
-    :return: new cyphertext, sub-key
+    Get top chars, ordered by occurrence
+
+    :param cyphertext: cyphertext
+    :param n: return n chars
+    :return list with chars, sorted by occurrence:
     """
-    # MOST_COMMON_CHARS_ENG = ' etaoinshrdlu'
-    MOST_COMMON_CHARS_ENG = ' et'
     char_counter = defaultdict(int)
     for char in cyphertext:
         char_counter[char] += 1
-    MOST_COMMON_CHARS_DOC = ''.join([x[0] for x in sorted(char_counter.items(), key=lambda x: x[1], reverse=True)])
-    sub_key = {}
-    for x, Y in zip(MOST_COMMON_CHARS_DOC, MOST_COMMON_CHARS_ENG):
-        sub_key[x] = Y
-    return apply_substitution_dictionary(cyphertext, sub_key), sub_key
+    return [x[0] for x in sorted(char_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
-def stage2(cyphertext):
+def get_top_short_words(cyphertext, length, separator=' ', n=None):
     """
-    Searches for most common short words
-    :param cyphertext: after stage 2
-    :return: new cyphertext, sub-key
+    Get top short words with specified length, ordered by occurrence.
+    Word separators must be space, or given.
+
+    :param cyphertext: cyphertext
+    :param length: word length to search
+    :param separator: separator (cyphertext must be split into tokens)
+    :param n: return n words
+    :return: list of words
     """
-    # MOST_COMMON_ONE_CHAR_WORDS_ENG = ['a', 'i']
-    # MOST_COMMON_TWO_CHAR_WORDS_ENG = ['of', 'to', 'in']
-    # MOST_COMMON_THREE_CHAR_WORDS_ENG = ['the', 'and', 'for']
-    MOST_COMMON_ONE_CHAR_WORDS_ENG = ['a']
-    MOST_COMMON_TWO_CHAR_WORDS_ENG = ['of']
-    MOST_COMMON_THREE_CHAR_WORDS_ENG = ['the']
-    one_char_word_counter = defaultdict(int)
-    two_char_word_counter = defaultdict(int)
-    three_char_word_counter = defaultdict(int)
-    sub_key = {}
-    for token in cyphertext.split():
-        if len(token) == 1:
-            one_char_word_counter[token] += 1
-        if len(token) == 2:
-            two_char_word_counter[token] += 1
-        if len(token) == 3:
-            three_char_word_counter[token] += 1
-    MOST_COMMON_ONE_CHAR_WORDS_DOC = [x[0] for x in
-                                      sorted(one_char_word_counter.items(), key=lambda x: x[1], reverse=True)]
-    MOST_COMMON_TWO_CHAR_WORDS_DOC = [x[0] for x in
-                                      sorted(two_char_word_counter.items(), key=lambda x: x[1], reverse=True)]
-    MOST_COMMON_THREE_CHAR_WORDS_DOC = [x[0] for x in
-                                        sorted(three_char_word_counter.items(), key=lambda x: x[1], reverse=True)]
-    for x, Y in zip(MOST_COMMON_ONE_CHAR_WORDS_DOC, MOST_COMMON_ONE_CHAR_WORDS_ENG):
-        sub_key[x] = Y
-    for x, Y in list(zip(MOST_COMMON_TWO_CHAR_WORDS_DOC, MOST_COMMON_TWO_CHAR_WORDS_ENG)) + list(
-            zip(MOST_COMMON_THREE_CHAR_WORDS_DOC, MOST_COMMON_THREE_CHAR_WORDS_ENG)):
-        for x_c, X_c in zip(x, Y):
-            sub_key[x_c] = X_c
-    return apply_substitution_dictionary(cyphertext, sub_key), sub_key
+    word_counter = defaultdict(int)
+    for token in cyphertext.split(separator):
+        if len(token) == length:
+            word_counter[token] += 1
+    return [x[0] for x in sorted(word_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
-def stage3(cyphertext):
+def get_top_double_chars(cyphertext, n=None):
     """
-    Searches for most common char doubles
-    :param cyphertext: after stage 3
-    :return: new cyphertext, sub-key
+    Get top double chars ('nn',...)
+    :param cyphertext: cyphertext
+    :param n: return n double chars
+    :return: list of double chars
     """
-    sub_key = {}
     char_double_counter = defaultdict(int)
-    print(len(cyphertext))
-    for i in range(len(cyphertext)-1):
+    for i in range(len(cyphertext) - 1):
         a, b = cyphertext[i], cyphertext[i + 1]
         if a == b and a != ' ':
-            print(a+b,a, b)
             char_double_counter[a + b] += 1
-    print(char_double_counter)
-    return apply_substitution_dictionary(cyphertext, sub_key), sub_key
+    return [x[0] for x in sorted(char_double_counter.items(), key=lambda x: x[1], reverse=True)][:n]
+
+
+def get_top_initial_letters(cyphertext, separator=' ', n=None):
+    """
+    Get top initial word letters.
+    Word separators must be space, or given.
+
+    :param cyphertext: cyphertext
+    :return: list of initial letters, ordered by occurrence
+    """
+    letter_counter = defaultdict(int)
+    for token in cyphertext.split(separator):
+        letter_counter[token[0:1]] += 1
+    return [x[0] for x in sorted(letter_counter.items(), key=lambda x: x[1], reverse=True)][:n]
+
+
+def get_top_final_letters(cyphertext, separator=' ', n=None):
+    """
+    Get top final word letters.
+    Word separators must be space, or given.
+
+    :param cyphertext: cyphertext
+    :return: list of final letters, ordered by occurrence
+    """
+    letter_counter = defaultdict(int)
+    for token in cyphertext.split(separator):
+        letter_counter[token[-1:]] += 1
+    return [x[0] for x in sorted(letter_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
 ##############################################################################
+
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 display_fancy('INPUT', cyphertext)
-
-cypher_stage1, key_stage_1 = stage1(cyphertext)
-display_fancy('STAGE 1 - CHARACTER STATS', cypher_stage1)
-cypher_stage2, key_stage_2 = stage2(cypher_stage1)
-display_fancy('STAGE 2 - SHORT WORDS STATISTICS', cypher_stage2)
-cypher_stage3, key_stage_3 = stage3(cypher_stage2)
-display_fancy('STAGE 3 - CHAR DOUBLES STATISTICS', cypher_stage3)
+print(get_top_chars(cyphertext))
+print(get_top_short_words(cyphertext, 1))
+print(get_top_short_words(cyphertext, 2))
+print(get_top_short_words(cyphertext, 3))
+print(get_top_double_chars(cyphertext))
+print(get_top_initial_letters(cyphertext))
+print(get_top_final_letters(cyphertext))
