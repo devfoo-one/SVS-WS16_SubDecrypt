@@ -93,7 +93,6 @@ def stage1(cyphertext):
         char_counter[char] += 1
     MOST_COMMON_CHARS_DOC = ''.join([x[0] for x in sorted(char_counter.items(), key=lambda x: x[1], reverse=True)])
     sub_key = {}
-    print(sorted(char_counter.items(), key=lambda x: x[1], reverse=True))
     for x, Y in zip(MOST_COMMON_CHARS_DOC, MOST_COMMON_CHARS_ENG):
         sub_key[x] = Y
     return apply_substitution_dictionary(cyphertext, sub_key), sub_key
@@ -137,6 +136,24 @@ def stage2(cyphertext):
     return apply_substitution_dictionary(cyphertext, sub_key), sub_key
 
 
+def stage3(cyphertext):
+    """
+    Searches for most common char doubles
+    :param cyphertext: after stage 3
+    :return: new cyphertext, sub-key
+    """
+    sub_key = {}
+    char_double_counter = defaultdict(int)
+    print(len(cyphertext))
+    for i in range(len(cyphertext)-1):
+        a, b = cyphertext[i], cyphertext[i + 1]
+        if a == b and a != ' ':
+            print(a+b,a, b)
+            char_double_counter[a + b] += 1
+    print(char_double_counter)
+    return apply_substitution_dictionary(cyphertext, sub_key), sub_key
+
+
 ##############################################################################
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 display_fancy('INPUT', cyphertext)
@@ -145,3 +162,5 @@ cypher_stage1, key_stage_1 = stage1(cyphertext)
 display_fancy('STAGE 1 - CHARACTER STATS', cypher_stage1)
 cypher_stage2, key_stage_2 = stage2(cypher_stage1)
 display_fancy('STAGE 2 - SHORT WORDS STATISTICS', cypher_stage2)
+cypher_stage3, key_stage_3 = stage3(cypher_stage2)
+display_fancy('STAGE 3 - CHAR DOUBLES STATISTICS', cypher_stage3)
