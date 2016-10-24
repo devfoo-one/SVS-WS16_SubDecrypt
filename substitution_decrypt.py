@@ -3,9 +3,10 @@ Takes an encrypted string (character substitution) as a command line argument, a
 """
 import string
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
+N = 10  # How many top n values should be considered during statistic analysis?
 
 
 def get_text_from_file(path):
@@ -198,50 +199,61 @@ FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 
                         'much', 'some', 'time']
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
-display_fancy('INPUT', cyphertext)
+# display_fancy('INPUT', cyphertext)
 
 # try to find word separator
 sep = get_top_chars(cyphertext, 1)[0]
 cyphertext = apply_substitution_dictionary(cyphertext, {sep: ' '})
-display_fancy('SPACE DETECTION', cyphertext)
+# display_fancy('SPACE DETECTION', cyphertext)
 
 # combine all candidates for all keys
-KEY_CANDIDATE = defaultdict(list)
+WEIGHTED_KEY_CANDIDATES = defaultdict(list)
 
-# analyse top char unigrams
-for doc, eng in zip(get_top_chars(cyphertext)[1:], FREQ_char_unigrams):
-    KEY_CANDIDATE[doc].append(eng)
+# analyse top char unigrams WEIGHT = 0.8
+for doc, eng in zip(get_top_chars(cyphertext, n=10)[1:], FREQ_char_unigrams):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 80)
 
-# analyse char doubles
-for doc, eng in zip(get_top_double_chars(cyphertext), FREQ_char_doubles):
-    KEY_CANDIDATE[doc[-1]].append(eng[:-1])
-    print(KEY_CANDIDATE)
+# analyse char doubles WEIGHT = 0.14
+for doc, eng in zip(get_top_double_chars(cyphertext, n=N), FREQ_char_doubles):
+    WEIGHTED_KEY_CANDIDATES[doc[-1]].extend(list(eng[:-1]) * 14)
+    print(WEIGHTED_KEY_CANDIDATES)
 
-# analyse character bi- and trigrams
-for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=2), FREQ_char_bigrams):
+# analyse character bi- and trigrams WEIGHT 0.3 (both)
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=2, n=N), FREQ_char_bigrams):
     for x, Y in zip(doc, eng):
-        KEY_CANDIDATE[x].append(Y)
-for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=3), FREQ_char_trigrams):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 3)
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=3, n=N), FREQ_char_trigrams):
     for x, Y in zip(doc, eng):
-        KEY_CANDIDATE[x].append(Y)
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 3)
 
-# analyse short words
-for doc, eng in list(zip(get_top_short_words(cyphertext, length=1), FREQ_words_one_char)) + list(
-        zip(get_top_short_words(cyphertext, length=2), FREQ_words_two_char)) + list(
-        zip(get_top_short_words(cyphertext, length=3), FREQ_words_three_char)) + list(
-        zip(get_top_short_words(cyphertext, length=4), FREQ_words_four_char)):
+# analyse short(1) words WEIGHT = 1.0
+for doc, eng in zip(get_top_short_words(cyphertext, length=1, n=2), FREQ_words_one_char):
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 10)
+# analyse short(2) words WEIGHT = 0.1
+for doc, eng in zip(get_top_short_words(cyphertext, length=2, n=N), FREQ_words_two_char):
     print(doc, eng)
     for x, Y in zip(doc, eng):
-        KEY_CANDIDATE[x].append(Y)
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 1)
+# analyse short(3) words WEIGHT = 0.4
+for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=N), FREQ_words_three_char):
+    print(doc, eng)
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 4)
+# analyse short(4) words WEIGHT 0.42
+for doc, eng in zip(get_top_short_words(cyphertext, length=4, n=N), FREQ_words_four_char):
+    print(doc, eng)
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 4)
 
-# analyse initial/final characters
-for doc, eng in zip(get_top_initial_letters(cyphertext), FREQ_word_initial_chars):
-    KEY_CANDIDATE[doc].append(eng)
-for doc, eng in zip(get_top_final_letters(cyphertext), FREQ_word_final_chars):
-    KEY_CANDIDATE[doc].append(eng)
+# analyse initial/final characters WEIGHT 0.1 (both)
+for doc, eng in zip(get_top_initial_letters(cyphertext, n=N), FREQ_word_initial_chars):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 1)
+for doc, eng in zip(get_top_final_letters(cyphertext, n=N), FREQ_word_final_chars):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 1)
 
-
-print(KEY_CANDIDATE)
-
-for k, v in KEY_CANDIDATE.items():
-    print(k,' -> ',''.join(sorted(v)))
+for cypher_char, candidates in WEIGHTED_KEY_CANDIDATES.items():
+    top3_candidates = sorted(Counter(candidates).items(), key=lambda x: x[1], reverse=True)[:3]
+    print('TOP 3 CANDIDATES FOR CYPHER CHAR', cypher_char)
+    for candidate, count in top3_candidates:
+        print('{}, {:.2%}'.format(candidate, count / len(candidates)))
