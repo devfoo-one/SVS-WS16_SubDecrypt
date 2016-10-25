@@ -5,8 +5,8 @@ charCounter = defaultdict(int)
 wordCounter = defaultdict(int)
 char_re = re.compile(r'[a-z]')
 
-# for line in open('textfiles/alice.txt'):
-for line in open('../texts/crypto.txt'):
+for line in open('textfiles/alice.txt'):
+# for line in open('../texts/crypto.txt'):
     line = line.lower()
     for word in line.split():
         word = ''.join(char_re.findall(word))

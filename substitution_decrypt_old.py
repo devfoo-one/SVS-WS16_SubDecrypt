@@ -3,9 +3,9 @@ Takes an encrypted string (character substitution) as a command line argument, a
 """
 import string
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 
-VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"') # WARNING: DO NOT USE '_'
+VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
 
 
 def get_text_from_file(path):
@@ -41,10 +41,7 @@ def clean_text(text):
     ret_val = ""
     for c in text:
         if c in VALID_CHARS:
-            if c == ' ':
-                ret_val += '_'
-            else:
-                ret_val += c
+            ret_val += c
     return ret_val
 
 
@@ -72,7 +69,7 @@ def display_fancy(name, text):
     :param key: current key
     """
     print()
-    print('{:*^100}'.format(" " + name + " "))
+    print('{:*^100}'.format(name))
     while True:
         display = text[0:96]
         text = text[96:]
@@ -196,6 +193,9 @@ def word_pattern(word):
         ret_val.append(chars.index(c))
     return tuple(ret_val)
 
+
+##############################################################################
+
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
 FREQ_char_unigrams = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
 FREQ_char_bigrams = ['th', 'er', 'on', 'an', 're', 'he', 'in', 'ed', 'nd', 'ha', 'at', 'en', 'es', 'of', 'or', 'nt',
@@ -214,44 +214,78 @@ FREQ_words_three_char = ['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all',
                          'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use']
 FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 'they', 'know', 'want', 'been', 'good',
                         'much', 'some', 'time']
-COMMON_SHORT_WORDS = FREQ_words_one_char + FREQ_words_two_char + FREQ_words_three_char + FREQ_words_four_char
-
-##################################################################################
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
-KEY = {}
-display_fancy('INPUT', cyphertext)
+# display_fancy('INPUT', cyphertext)
 
 # try to find word separator
 sep = get_top_chars(cyphertext, 1)[0]
-KEY[sep] = ' '
-cyphertext = apply_substitution_dictionary(cyphertext, KEY)
-print(KEY)
-display_fancy('SPACE DETECTION', cyphertext)
+cyphertext = apply_substitution_dictionary(cyphertext, {sep: ' '})
+# display_fancy('SPACE DETECTION', cyphertext)
 
-# find one char words
-for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
-    if doc not in KEY.keys():
-        KEY[doc] = eng
+# combine all candidates for all keys
+WEIGHTED_KEY_CANDIDATES = defaultdict(list)
 
-# find most common characters
-for doc, eng in zip(get_top_chars(cyphertext, n=6)[1:], FREQ_char_unigrams):
-    if doc not in KEY.keys():
-        KEY[doc] = eng
+# analyse top char unigrams WEIGHT = 0.8
+for doc, eng in zip(get_top_chars(cyphertext)[1:], FREQ_char_unigrams):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 80)
 
-print(KEY)
-display_fancy('FREQUENCY PHASE 1', apply_substitution_dictionary(cyphertext, KEY))
+# analyse char doubles WEIGHT = 0.14
+for doc, eng in zip(get_top_double_chars(cyphertext), FREQ_char_doubles):
+    WEIGHTED_KEY_CANDIDATES[doc[-1]].extend(list(eng[:-1]) * 14)
 
-# for doc, eng in zip(get_top_short_words(cyphertext, length=2, n=2), FREQ_words_two_char):
-#     print(doc, eng)
-#     if word_pattern(doc) == word_pattern(eng):
-#         for x, Y in zip(doc, eng):
-#             if x not in KEY.keys():
-#                 KEY[x] = Y
-#
-#
-# for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_three_char):
-#     if word_pattern(doc) == word_pattern(eng):
-#         for x, Y in zip(doc, eng):
-#             if x not in KEY.keys():
-#                 KEY[x] = Y
+# analyse character bi- and trigrams WEIGHT 0.3 (both)
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=2), FREQ_char_bigrams):
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 3)
+for doc, eng in zip(get_top_char_ngrams(cyphertext, ngram=3), FREQ_char_trigrams):
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 3)
+
+# analyse short(1) words WEIGHT = 1.0
+for doc, eng in zip(get_top_short_words(cyphertext, length=1), FREQ_words_one_char):
+    for x, Y in zip(doc, eng):
+        WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 10)
+# analyse short(2) words WEIGHT = 0.1
+for doc, eng in zip(get_top_short_words(cyphertext, length=2), FREQ_words_two_char):
+    if word_pattern(doc) == word_pattern(eng):
+        for x, Y in zip(doc, eng):
+            WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 10)
+# analyse short(3) words WEIGHT = 0.4
+for doc, eng in zip(get_top_short_words(cyphertext, length=3), FREQ_words_three_char):
+    if word_pattern(doc) == word_pattern(eng):
+        for x, Y in zip(doc, eng):
+            WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 4)
+# analyse short(4) words WEIGHT 0.42
+for doc, eng in zip(get_top_short_words(cyphertext, length=4), FREQ_words_four_char):
+    if word_pattern(doc) == word_pattern(eng):
+        for x, Y in zip(doc, eng):
+            WEIGHTED_KEY_CANDIDATES[x].extend(list(Y) * 4)
+
+# analyse initial/final characters WEIGHT 0.1 (both)
+for doc, eng in zip(get_top_initial_letters(cyphertext), FREQ_word_initial_chars):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 1)
+for doc, eng in zip(get_top_final_letters(cyphertext), FREQ_word_final_chars):
+    WEIGHTED_KEY_CANDIDATES[doc].extend(list(eng) * 1)
+
+print('Trying with this setup:')
+KEY_STATISTICS = {}
+for cypher_char, candidates in WEIGHTED_KEY_CANDIDATES.items():
+    # A test has shown that the right candidate is never at the second or less position. (Either top or not found).
+    candidate = sorted(Counter(candidates).items(), key=lambda x: x[1], reverse=True)[:1][0][0]
+    candidate_count = sorted(Counter(candidates).items(), key=lambda x: x[1], reverse=True)[:1][0][1]
+    total_candidate_count = len(candidates)
+    # if total_candidate_count > 100 and candidate_count / total_candidate_count > 0.5:
+    print(cypher_char, candidate, len(candidates), '{:.2%}'.format(candidate_count / len(candidates)))
+    KEY_STATISTICS[cypher_char] = candidate
+
+display_fancy('AFTER STATISTICS', apply_substitution_dictionary(cyphertext, KEY_STATISTICS))
+
+print(word_pattern('abcdefg'))
+print(word_pattern('alla'))
+
+"""
+TODO ICH NOTIERE:
+1. Es muss sichergestellt sein, dass die Keys ihre Bijektivität nicht verlieren!
+2. Ein Wörterbuch muss her!
+"""
