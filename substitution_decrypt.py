@@ -5,6 +5,8 @@ import string
 import sys
 from collections import defaultdict
 
+import itertools
+
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"') # WARNING: DO NOT USE '_'
 
 
@@ -231,16 +233,37 @@ display_fancy('SPACE DETECTION', cyphertext)
 
 # find one char words
 for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
-    if doc not in KEY.keys():
+    if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
 # find most common characters
 for doc, eng in zip(get_top_chars(cyphertext, n=6)[1:], FREQ_char_unigrams):
-    if doc not in KEY.keys():
+    if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
 print(KEY)
 display_fancy('FREQUENCY PHASE 1', apply_substitution_dictionary(cyphertext, KEY))
+
+###############################
+
+key_candidates = defaultdict(set)
+
+# add possible double char permutations
+double_chars = []
+for c in get_top_double_chars(cyphertext):
+    c = c[:-1] # get one char
+    if c not in KEY.keys():
+        double_chars.append(c)
+for i in itertools.permutations(double_chars):
+    for doc, eng in zip(i, [x[:-1] for x in FREQ_char_doubles]):
+        # print(doc, eng)
+        if doc not in KEY.keys() and eng not in KEY.values():
+            key_candidates[doc].add(eng)
+
+for k,v in key_candidates.items():
+    print('{} -> {}'.format(k,v))
+
+print(KEY.items())
 
 # for doc, eng in zip(get_top_short_words(cyphertext, length=2, n=2), FREQ_words_two_char):
 #     print(doc, eng)
