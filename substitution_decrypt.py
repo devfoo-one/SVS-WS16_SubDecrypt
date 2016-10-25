@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import itertools
 
-VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"') # WARNING: DO NOT USE '_'
+VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')  # WARNING: DO NOT USE '_'
 
 
 def get_text_from_file(path):
@@ -126,7 +126,7 @@ def get_top_double_chars(cyphertext, n=None):
     char_double_counter = defaultdict(int)
     for i in range(len(cyphertext) - 1):
         a, b = cyphertext[i], cyphertext[i + 1]
-        if a == b and a != ' ':
+        if a == b and a != ' ' and b != ' ':
             char_double_counter[a + b] += 1
     return [x[0] for x in sorted(char_double_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
@@ -198,6 +198,7 @@ def word_pattern(word):
         ret_val.append(chars.index(c))
     return tuple(ret_val)
 
+
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
 FREQ_char_unigrams = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
 FREQ_char_bigrams = ['th', 'er', 'on', 'an', 're', 'he', 'in', 'ed', 'nd', 'ha', 'at', 'en', 'es', 'of', 'or', 'nt',
@@ -222,14 +223,14 @@ COMMON_SHORT_WORDS = FREQ_words_one_char + FREQ_words_two_char + FREQ_words_thre
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 KEY = {}
-display_fancy('INPUT', cyphertext)
+# display_fancy('INPUT', cyphertext)
 
 # try to find word separator
 sep = get_top_chars(cyphertext, 1)[0]
 KEY[sep] = ' '
 cyphertext = apply_substitution_dictionary(cyphertext, KEY)
-print(KEY)
-display_fancy('SPACE DETECTION', cyphertext)
+# print(KEY)
+# display_fancy('SPACE DETECTION', cyphertext)
 
 # find one char words
 for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
@@ -241,6 +242,13 @@ for doc, eng in zip(get_top_chars(cyphertext, n=6)[1:], FREQ_char_unigrams):
     if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
+# take the top 2 (seems good) most frequent three-char words
+for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_three_char):
+    if word_pattern(doc) == word_pattern(eng):
+        for x, Y in zip(doc, eng):
+            if x not in KEY.keys() and Y not in KEY.values():
+                KEY[x] = Y
+
 print(KEY)
 display_fancy('FREQUENCY PHASE 1', apply_substitution_dictionary(cyphertext, KEY))
 
@@ -250,8 +258,8 @@ key_candidates = defaultdict(set)
 
 # add possible double char permutations
 double_chars = []
-for c in get_top_double_chars(cyphertext):
-    c = c[:-1] # get one char
+for c in get_top_double_chars(cyphertext, n=10):
+    c = c[:-1]  # get one char
     if c not in KEY.keys():
         double_chars.append(c)
 for i in itertools.permutations(double_chars):
@@ -260,21 +268,29 @@ for i in itertools.permutations(double_chars):
         if doc not in KEY.keys() and eng not in KEY.values():
             key_candidates[doc].add(eng)
 
-for k,v in key_candidates.items():
-    print('{} -> {}'.format(k,v))
+for k, v in key_candidates.items():
+    print('{} -> {}'.format(k, v))
+print(KEY)
 
-print(KEY.items())
+# add possible short word char permutations
+for i in itertools.permutations(get_top_short_words(cyphertext, length=2, n=4)):
+    for doc, eng in zip(i, FREQ_words_two_char):
+        for x, Y in zip(doc, eng):
+            if x not in KEY.keys() and Y not in KEY.values():
+                key_candidates[x].add(Y)
+for i in itertools.permutations(get_top_short_words(cyphertext, length=3, n=6)[2:]):
+    # first 2 three char words have already been processed
+    for doc, eng in zip(i, FREQ_words_three_char):
+        if word_pattern(doc) == word_pattern(eng):
+            for x, Y in zip(doc, eng):
+                if x not in KEY.keys() and Y not in KEY.values():
+                    key_candidates[x].add(Y)
+for i in itertools.permutations(get_top_short_words(cyphertext, length=4, n=4)):
+    for doc, eng in zip(i, FREQ_words_four_char):
+        if word_pattern(doc) == word_pattern(eng):
+            for x, Y in zip(doc, eng):
+                if x not in KEY.keys() and Y not in KEY.values():
+                    key_candidates[x].add(Y)
 
-# for doc, eng in zip(get_top_short_words(cyphertext, length=2, n=2), FREQ_words_two_char):
-#     print(doc, eng)
-#     if word_pattern(doc) == word_pattern(eng):
-#         for x, Y in zip(doc, eng):
-#             if x not in KEY.keys():
-#                 KEY[x] = Y
-#
-#
-# for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_three_char):
-#     if word_pattern(doc) == word_pattern(eng):
-#         for x, Y in zip(doc, eng):
-#             if x not in KEY.keys():
-#                 KEY[x] = Y
+for k, v in key_candidates.items():
+    print('{} -> {}'.format(k, v))
