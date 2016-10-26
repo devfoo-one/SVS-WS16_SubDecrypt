@@ -1,11 +1,13 @@
 """
 Takes an encrypted string (character substitution) as a command line argument, and tries to decrypt it automatically.
 """
+import random
 import string
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import itertools
+from statistics import mean
 
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')  # WARNING: DO NOT USE '_'
 
@@ -197,6 +199,38 @@ def word_pattern(word):
             chars.append(c)
         ret_val.append(chars.index(c))
     return tuple(ret_val)
+
+
+def score_text(text):
+    """
+    Returns the number of word matches within a text
+    :param text:
+    :return: Number of word matches
+    """
+    hits = 0
+    for word in text.split():
+        if word in COMMON_WORDS:
+            hits += 1
+    return hits
+
+
+def most_common_dict(dicts):
+    """
+    Calculates an average dictionary out of given dicts of the same dimensions and keys.
+    Includes only items that occour as twice as much as the average.
+    :param dicts: list with dicts
+    :return: dict
+    """
+    retVal = {}
+    keys = dicts[0].keys()
+    for k in keys:
+        values = []
+        for d in dicts:
+            values.append(d[k])
+        most_common_item_for_k = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)[0]
+        if most_common_item_for_k[1] > 2 * mean(Counter(values).values()):
+            retVal[k] = most_common_item_for_k[0]
+    return retVal
 
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
@@ -911,40 +945,71 @@ display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY
 
 ###############################
 
-key_candidates = defaultdict(set)
+# key_candidates = defaultdict(list)
+#
+# # add possible double char permutations
+# double_chars = []
+# for c in get_top_double_chars(cyphertext, n=10):
+#     c = c[:-1]  # get one char
+#     if c not in KEY.keys():
+#         double_chars.append(c)
+# for i in itertools.permutations(double_chars):
+#     for doc, eng in zip(i, [x[:-1] for x in FREQ_char_doubles]):
+#         # print(doc, eng)
+#         if doc not in KEY.keys() and eng not in KEY.values():
+#             key_candidates[doc].append(eng)
+#
+# # add possible short word char permutations
+# for i in itertools.permutations(get_top_short_words(cyphertext, length=2, n=4)):
+#     for doc, eng in zip(i, FREQ_words_two_char):
+#         for x, Y in zip(doc, eng):
+#             if x not in KEY.keys() and Y not in KEY.values():
+#                 key_candidates[x].append(Y)
+# for i in itertools.permutations(get_top_short_words(cyphertext, length=3, n=6)[2:]):
+#     # first 2 three char words have already been processed
+#     for doc, eng in zip(i, FREQ_words_three_char):
+#         if word_pattern(doc) == word_pattern(eng):
+#             for x, Y in zip(doc, eng):
+#                 if x not in KEY.keys() and Y not in KEY.values():
+#                     key_candidates[x].append(Y)
+# for i in itertools.permutations(get_top_short_words(cyphertext, length=4, n=4)):
+#     for doc, eng in zip(i, FREQ_words_four_char):
+#         if word_pattern(doc) == word_pattern(eng):
+#             for x, Y in zip(doc, eng):
+#                 if x not in KEY.keys() and Y not in KEY.values():
+#                     key_candidates[x].append(Y)
+#
+# # GENERATE ALL KEY CANDIDATE PERMUTATIONS #
+#
+# for k, v in key_candidates.items():
+#     print(k, Counter(v))
 
-# add possible double char permutations
-double_chars = []
-for c in get_top_double_chars(cyphertext, n=10):
-    c = c[:-1]  # get one char
-    if c not in KEY.keys():
-        double_chars.append(c)
-for i in itertools.permutations(double_chars):
-    for doc, eng in zip(i, [x[:-1] for x in FREQ_char_doubles]):
-        # print(doc, eng)
-        if doc not in KEY.keys() and eng not in KEY.values():
-            key_candidates[doc].add(eng)
+#####################################################
+print('RAGE-QUIT-BRUTE-FORCING THE SHIT OUT OF THIS...')
 
-# add possible short word char permutations
-for i in itertools.permutations(get_top_short_words(cyphertext, length=2, n=4)):
-    for doc, eng in zip(i, FREQ_words_two_char):
-        for x, Y in zip(doc, eng):
-            if x not in KEY.keys() and Y not in KEY.values():
-                key_candidates[x].add(Y)
-for i in itertools.permutations(get_top_short_words(cyphertext, length=3, n=6)[2:]):
-    # first 2 three char words have already been processed
-    for doc, eng in zip(i, FREQ_words_three_char):
-        if word_pattern(doc) == word_pattern(eng):
-            for x, Y in zip(doc, eng):
-                if x not in KEY.keys() and Y not in KEY.values():
-                    key_candidates[x].add(Y)
-for i in itertools.permutations(get_top_short_words(cyphertext, length=4, n=4)):
-    for doc, eng in zip(i, FREQ_words_four_char):
-        if word_pattern(doc) == word_pattern(eng):
-            for x, Y in zip(doc, eng):
-                if x not in KEY.keys() and Y not in KEY.values():
-                    key_candidates[x].add(Y)
-
-# GENERATE ALL KEY CANDIDATE PERMUTATIONS #
-for k, v in key_candidates.items():
-    print(k, v)
+best_score = score_text(cyphertext)
+key_store = []
+LEARNED_PART = {}
+while True:
+    leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
+    leftover_doc_chars.remove(' ')
+    leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
+    leftover_eng_chars.remove(' ')
+    # doc chars complexity must be less or equal than eng chars (due to import restrictions)
+    map_range = list(range(0, len(leftover_eng_chars)))
+    random.shuffle(map_range)
+    random_part = {}
+    for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
+        random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
+    random_key = KEY.copy()
+    random_key.update(random_part)
+    random_key.update(LEARNED_PART)
+    text = apply_substitution_dictionary(cyphertext, random_key)
+    score = score_text(text)
+    if score > best_score:
+        best_score = score
+        display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
+        key_store.append(random_key)
+        LEARNED_PART = most_common_dict(key_store)
+        print('LEARNED PART')
+        print(LEARNED_PART)
