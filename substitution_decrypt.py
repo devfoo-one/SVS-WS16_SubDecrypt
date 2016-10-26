@@ -214,10 +214,10 @@ def score_text(text):
     return hits
 
 
-def most_common_dict(dicts):
+def learn_from_dicts(dicts, threshold=4):
     """
-    Calculates an average dictionary out of given dicts of the same dimensions and keys.
-    Includes only items that occour as twice as much as the average.
+    Returns a dictionary, that includes all k/v pairs which occur more often than others.
+    :param threshold: how hard is it to learn?
     :param dicts: list with dicts
     :return: dict
     """
@@ -228,9 +228,23 @@ def most_common_dict(dicts):
         for d in dicts:
             values.append(d[k])
         most_common_item_for_k = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)[0]
-        if most_common_item_for_k[1] > 3 + mean(Counter(values).values()):
+        if most_common_item_for_k[1] > threshold + mean(Counter(values).values()):
             retVal[k] = most_common_item_for_k[0]
     return retVal
+
+
+def dict_variance(d, level=1):
+    """
+    Shuffles elements in dictionaries in place
+    :param d:
+    :param level: how many elements should be shuffled?
+    :return: dict
+    """
+    d_keys = list(d.keys())
+    random.shuffle(d_keys)
+    for i in range(0, level):
+        d[d_keys[i]], d[d_keys[i+1]] = d[d_keys[i+1]], d[d_keys[i]]
+    return d
 
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
@@ -985,7 +999,7 @@ display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY
 #     print(k, Counter(v))
 
 #####################################################
-print('RAGE-QUIT-BRUTE-FORCING THE SHIT OUT OF THIS...')
+print('RAGE-QUIT-BRUTE-FORCING...')
 
 best_score = score_text(cyphertext)
 key_store = []
@@ -996,26 +1010,45 @@ while True:
     leftover_doc_chars.remove(' ')
     leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
     leftover_eng_chars.remove(' ')
+
     # doc chars complexity must be less or equal than eng chars (due to import restrictions)
     map_range = list(range(0, len(leftover_eng_chars)))
     random.shuffle(map_range)
     random_part = {}
     for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
         random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
+
     random_key = KEY.copy()
     random_key.update(random_part)
     random_key.update(LEARNED_PART)
+
+    # dict_variance(random_key, level=1)
     text = apply_substitution_dictionary(cyphertext, random_key)
     score = score_text(text)
+
     if score == best_score and score != 0:
-            abort_counter -= 1
+        abort_counter -= 1
+        print(abort_counter)
+
     if score >= best_score:
         key_store.append(random_key)
-        LEARNED_PART = most_common_dict(key_store)
+
     if score > best_score:
+        LEARNED_PART = learn_from_dicts(key_store, threshold=1)
         best_score = score
-        abort_counter = 100 * score
+        abort_counter = score
         display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
+        print(LEARNED_PART)
+        print('I learned {} items...'.format(len(LEARNED_PART)))
+
     if abort_counter == 0:
-        print('not getting better, exiting...')
-        break
+        print('I am not getting better.')
+        if len(LEARNED_PART) != 0:
+            print('Let me forget something...')
+            print(LEARNED_PART)
+            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))  # forget items...
+            print(LEARNED_PART)
+            abort_counter = 100
+        else:
+            print('kthxbai.')
+            break
