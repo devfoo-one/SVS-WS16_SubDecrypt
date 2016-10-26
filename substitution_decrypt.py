@@ -6,9 +6,6 @@ import string
 import sys
 from collections import defaultdict, Counter
 
-import itertools
-from statistics import mean
-
 VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')  # WARNING: DO NOT USE '_'
 
 
@@ -121,72 +118,6 @@ def get_top_short_words(cyphertext, length, separator=' ', n=None):
     return [x[0] for x in sorted(word_counter.items(), key=lambda x: x[1], reverse=True)][:n]
 
 
-def get_top_double_chars(cyphertext, n=None):
-    """
-    Get top double chars ('nn',...)
-    :param cyphertext: cyphertext
-    :param n: return n double chars
-    :return: list of double chars
-    """
-    char_double_counter = defaultdict(int)
-    for i in range(len(cyphertext) - 1):
-        a, b = cyphertext[i], cyphertext[i + 1]
-        if a == b and a != ' ' and b != ' ':
-            char_double_counter[a + b] += 1
-    return [x[0] for x in sorted(char_double_counter.items(), key=lambda x: x[1], reverse=True)][:n]
-
-
-def get_top_char_ngrams(cyphertext, ngram=2, separator=' ', n=None):
-    """
-    Get top n-grams, ordered by occurrence
-    Word separators must be space, or given.
-
-    :param cyphertext: cyphertext
-    :param ngram: n of ngrams
-    :param separator: word separator, default is space
-    :param n: return top n n-grams
-    :return: list of n-grams, ordered by occurrence
-    """
-    char_ngram_counter = defaultdict(int)
-    for word in cyphertext.split(separator):
-        for i in range(len(word) - (ngram - 1)):
-            _token = word[i:i + ngram]
-            char_ngram_counter[_token] += 1
-    return [x[0] for x in sorted(char_ngram_counter.items(), key=lambda x: x[1], reverse=True)][:n]
-
-
-def get_top_initial_letters(cyphertext, separator=' ', n=None):
-    """
-    Get top initial word letters.
-    Word separators must be space, or given.
-
-    :param cyphertext: cyphertext
-    :param separator: word separator, default is space
-    :param n: return n letters
-    :return: list of initial letters, ordered by occurrence
-    """
-    letter_counter = defaultdict(int)
-    for token in cyphertext.split(separator):
-        letter_counter[token[0:1]] += 1
-    return [x[0] for x in sorted(letter_counter.items(), key=lambda x: x[1], reverse=True)][:n]
-
-
-def get_top_final_letters(cyphertext, separator=' ', n=None):
-    """
-    Get top final word letters.
-    Word separators must be space, or given.
-
-    :param cyphertext: cyphertext
-    :param separator: word separator, default is space
-    :param n: return n letters
-    :return: list of final letters, ordered by occurrence
-    """
-    letter_counter = defaultdict(int)
-    for token in cyphertext.split(separator):
-        letter_counter[token[-1:]] += 1
-    return [x[0] for x in sorted(letter_counter.items(), key=lambda x: x[1], reverse=True)][:n]
-
-
 def word_pattern(word):
     """
     Generates word pattern.
@@ -213,7 +144,7 @@ def score_text(text):
     score = 0
     for word in text.split():
         if word in COMMON_WORDS:
-            score += len(word)
+            score += len(word) ** 2  # the longer the word, the higher the score
     return score
 
 
@@ -240,20 +171,7 @@ def learn_from_dicts(dicts, threshold=4):
             retVal[k] = most_common_item_for_k[0]
     return retVal
 
-
-def dict_variance(d, level=1):
-    """
-    Shuffles elements in dictionaries in place
-    :param d:
-    :param level: how many elements should be shuffled?
-    :return: dict
-    """
-    d_keys = list(d.keys())
-    random.shuffle(d_keys)
-    for i in range(0, level):
-        d[d_keys[i]], d[d_keys[i + 1]] = d[d_keys[i + 1]], d[d_keys[i]]
-    return d
-
+""""------------------------------- DATA PART -------------------------------"""
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
 FREQ_char_unigrams = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
@@ -273,7 +191,6 @@ FREQ_words_three_char = ['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all',
                          'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use']
 FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 'they', 'know', 'want', 'been', 'good',
                         'much', 'some', 'time']
-
 # https://github.com/first20hours/google-10000-english
 COMMON_WORDS = ['the', 'and', 'for', 'that', 'this', 'with', 'you', 'not', 'are', 'from', 'your', 'all', 'have', 'new',
                 'more', 'was', 'will', 'home', 'can', 'page', 'has', 'free', 'but', 'our', 'one', 'time', 'they',
@@ -979,9 +896,9 @@ COMMON_WORDS = ['the', 'and', 'for', 'that', 'this', 'with', 'you', 'not', 'are'
                 'unwrap', 'fares', 'resist', 'hoped', 'safer', 'wagner', 'touched', 'cologne', 'wishing', 'ranger',
                 'smallest', 'newman', 'marsh', 'ricky', 'scared', 'theta', 'monsters', 'asylum', 'lightbox', 'robbie',
                 'stake', 'cocktail', 'outlets', 'arbor', 'poison']
-
 ENGLISH_WORDS = FREQ_words_one_char + FREQ_words_two_char + FREQ_words_three_char + FREQ_words_four_char + COMMON_WORDS
-##################################################################################
+
+""""------------------------------- FREQUENCY PART -------------------------------"""
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 KEY = {}
@@ -989,8 +906,8 @@ display_fancy('INPUT', cyphertext, KEY)
 
 # try to find word separator
 sep = get_top_chars(cyphertext, 1)[0]
-KEY[sep] = ' '
-cyphertext = apply_substitution_dictionary(cyphertext, KEY)
+cyphertext = apply_substitution_dictionary(cyphertext, {sep: ' '})
+KEY[' '] = ' '  # make fixed key entry for word separator
 display_fancy('SPACE DETECTION', cyphertext, KEY)
 
 # find one char words
@@ -1010,64 +927,24 @@ for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_t
             if x not in KEY.keys() and Y not in KEY.values():
                 KEY[x] = Y
 
-print(KEY)
 display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY), KEY)
 
-###############################
 
-# key_candidates = defaultdict(list)
-#
-# # add possible double char permutations
-# double_chars = []
-# for c in get_top_double_chars(cyphertext, n=10):
-#     c = c[:-1]  # get one char
-#     if c not in KEY.keys():
-#         double_chars.append(c)
-# for i in itertools.permutations(double_chars):
-#     for doc, eng in zip(i, [x[:-1] for x in FREQ_char_doubles]):
-#         # print(doc, eng)
-#         if doc not in KEY.keys() and eng not in KEY.values():
-#             key_candidates[doc].append(eng)
-#
-# # add possible short word char permutations
-# for i in itertools.permutations(get_top_short_words(cyphertext, length=2, n=4)):
-#     for doc, eng in zip(i, FREQ_words_two_char):
-#         for x, Y in zip(doc, eng):
-#             if x not in KEY.keys() and Y not in KEY.values():
-#                 key_candidates[x].append(Y)
-# for i in itertools.permutations(get_top_short_words(cyphertext, length=3, n=6)[2:]):
-#     # first 2 three char words have already been processed
-#     for doc, eng in zip(i, FREQ_words_three_char):
-#         if word_pattern(doc) == word_pattern(eng):
-#             for x, Y in zip(doc, eng):
-#                 if x not in KEY.keys() and Y not in KEY.values():
-#                     key_candidates[x].append(Y)
-# for i in itertools.permutations(get_top_short_words(cyphertext, length=4, n=4)):
-#     for doc, eng in zip(i, FREQ_words_four_char):
-#         if word_pattern(doc) == word_pattern(eng):
-#             for x, Y in zip(doc, eng):
-#                 if x not in KEY.keys() and Y not in KEY.values():
-#                     key_candidates[x].append(Y)
-#
-# # GENERATE ALL KEY CANDIDATE PERMUTATIONS #
-#
-# for k, v in key_candidates.items():
-#     print(k, Counter(v))
+""""------------------------------- BRUTEFORCE PART -------------------------------"""
 
-#####################################################
 
 print('RAGE-QUIT-BRUTE-FORCING...')
-
-best_score = score_text(cyphertext)
-key_store = []
+BEST_SCORE = score_text(cyphertext)
+KEY_STORE = []
 LEARNED_PART = {}
-abort_counter = 100
-LAST_KEY = None
+MOTIVATION = 1000
+LAST_KEY = KEY
 while True:
+    MOTIVATION -= 1
     leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
-    leftover_doc_chars.remove(' ')
-    leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
-    leftover_eng_chars.remove(' ')
+    # leftover_doc_chars.remove(' ')
+    leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.values())).difference(LEARNED_PART.values()))
+    # leftover_eng_chars.remove(' ')
 
     # doc chars complexity must be less or equal than eng chars (due to import restrictions)
     map_range = list(range(0, len(leftover_eng_chars)))
@@ -1080,42 +957,49 @@ while True:
     random_key.update(random_part)
     random_key.update(LEARNED_PART)
 
-    # dict_variance(random_key, level=1)
     text = apply_substitution_dictionary(cyphertext, random_key)
     score = score_text(text)
 
-    if score == best_score and score != 0:
-        abort_counter -= 1
-        print(abort_counter)
+    if score < BEST_SCORE:
+        MOTIVATION -= 10
 
-    if score >= best_score:
-        key_store.append(random_key)
+    if score >= BEST_SCORE:
+        KEY_STORE.append(random_key)
+
+    if score > BEST_SCORE:
         LAST_KEY = random_key
-
-    if score > best_score:
-        LEARNED_PART = learn_from_dicts(key_store, threshold=2)
-        best_score = score
+        if len(KEY_STORE) > 1:
+            LEARNED_PART = learn_from_dicts(KEY_STORE, threshold=1)
+        BEST_SCORE = score
         # abort_counter = score  # the later the brute force the longer the try...
-        abort_counter = 10  # the later the brute force the longer the try...
+        MOTIVATION += 2000
         display_fancy('BRUTE FORCE SCORE {}'.format(score), text, random_key)
-        print('I learned {} items.'.format(len(LEARNED_PART)))
+        print('I´ve learned {} items. Motivation is {}.'.format(len(LEARNED_PART), MOTIVATION))
 
-    if abort_counter == 0:
+    if MOTIVATION <= 0:
         print('I am not getting better.')
         if len(LEARNED_PART) != 0:
-            print('Let me forget something...')
-            # forget 3 learned items and one frequency item...
+            before = set(LEARNED_PART.items())
+            # forget one learned item...
             LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
-            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
-            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
-            while True:
-                k = random.choice(list(KEY.keys()))
-                if KEY[k] != ' ':  # don´t remove word separator!
-                    KEY.pop(k)
-                    break
-            abort_counter = 10
+            lost = before.difference(set(LEARNED_PART.items())).pop()
+            print('Let me forget that "{}" should be "{}" ({}).'.format(lost[0], lost[1], len(LEARNED_PART)))
+            MOTIVATION += 2000
         else:
-            print('As good as it gets. KTHXBAI.')
+            if len(KEY) > 1:
+                # forget one frequency item...
+                before = set(KEY.items())
+                while True:
+                    k = random.choice(list(KEY.keys()))
+                    if KEY[k] != ' ':  # don´t remove word separator!
+                        KEY.pop(k)
+                        break
+                lost = before.difference(set(KEY.items())).pop()
+                print('I´ve completely forgot what i´ve recently learned.'
+                      ' Let me forget that "{}" was "{}".'.format(lost[0], lost[1]))
+                MOTIVATION += 7000
+            else:
+                print('As good as it gets. kthxbai.')
             break
 
-display_fancy('FINAL', apply_substitution_dictionary(cyphertext, LAST_KEY),LAST_KEY)
+display_fancy('FINAL', apply_substitution_dictionary(cyphertext, LAST_KEY), LAST_KEY)
