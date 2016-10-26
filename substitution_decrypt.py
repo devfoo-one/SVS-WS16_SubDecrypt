@@ -228,7 +228,7 @@ def most_common_dict(dicts):
         for d in dicts:
             values.append(d[k])
         most_common_item_for_k = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)[0]
-        if most_common_item_for_k[1] > 2 * mean(Counter(values).values()):
+        if most_common_item_for_k[1] > 3 + mean(Counter(values).values()):
             retVal[k] = most_common_item_for_k[0]
     return retVal
 
@@ -990,6 +990,7 @@ print('RAGE-QUIT-BRUTE-FORCING THE SHIT OUT OF THIS...')
 best_score = score_text(cyphertext)
 key_store = []
 LEARNED_PART = {}
+abort_counter = 100
 while True:
     leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
     leftover_doc_chars.remove(' ')
@@ -1006,10 +1007,15 @@ while True:
     random_key.update(LEARNED_PART)
     text = apply_substitution_dictionary(cyphertext, random_key)
     score = score_text(text)
-    if score > best_score:
-        best_score = score
-        display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
+    if score == best_score and score != 0:
+            abort_counter -= 1
+    if score >= best_score:
         key_store.append(random_key)
         LEARNED_PART = most_common_dict(key_store)
-        print('LEARNED PART')
-        print(LEARNED_PART)
+    if score > best_score:
+        best_score = score
+        abort_counter = 100 * score
+        display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
+    if abort_counter == 0:
+        print('not getting better, exiting...')
+        break
