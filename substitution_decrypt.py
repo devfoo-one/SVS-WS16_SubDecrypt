@@ -68,7 +68,7 @@ def apply_substitution_dictionary(cyphertext, key):
     return ret_val
 
 
-def display_fancy(name, text):
+def display_fancy(name, text, key):
     """
     Displays fancy box
     :param name: Box name
@@ -77,6 +77,9 @@ def display_fancy(name, text):
     """
     print()
     print('{:*^100}'.format(" " + name + " "))
+    for c in key.values():
+        text = text.replace(c,c.upper())
+
     while True:
         display = text[0:96]
         text = text[96:]
@@ -928,14 +931,14 @@ ENGLISH_WORDS = FREQ_words_one_char + FREQ_words_two_char + FREQ_words_three_cha
 
 cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
 KEY = {}
-display_fancy('INPUT', cyphertext)
+display_fancy('INPUT', cyphertext, KEY)
 
 # try to find word separator
 sep = get_top_chars(cyphertext, 1)[0]
 KEY[sep] = ' '
 cyphertext = apply_substitution_dictionary(cyphertext, KEY)
 # print(KEY)
-display_fancy('SPACE DETECTION', cyphertext)
+display_fancy('SPACE DETECTION', cyphertext, KEY)
 
 # find one char words
 for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
@@ -955,7 +958,7 @@ for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_t
                 KEY[x] = Y
 
 print(KEY)
-display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY))
+display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY), KEY)
 
 ###############################
 
@@ -999,56 +1002,57 @@ display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY
 #     print(k, Counter(v))
 
 #####################################################
-print('RAGE-QUIT-BRUTE-FORCING...')
 
-best_score = score_text(cyphertext)
-key_store = []
-LEARNED_PART = {}
-abort_counter = 100
-while True:
-    leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
-    leftover_doc_chars.remove(' ')
-    leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
-    leftover_eng_chars.remove(' ')
-
-    # doc chars complexity must be less or equal than eng chars (due to import restrictions)
-    map_range = list(range(0, len(leftover_eng_chars)))
-    random.shuffle(map_range)
-    random_part = {}
-    for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
-        random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
-
-    random_key = KEY.copy()
-    random_key.update(random_part)
-    random_key.update(LEARNED_PART)
-
-    # dict_variance(random_key, level=1)
-    text = apply_substitution_dictionary(cyphertext, random_key)
-    score = score_text(text)
-
-    if score == best_score and score != 0:
-        abort_counter -= 1
-        print(abort_counter)
-
-    if score >= best_score:
-        key_store.append(random_key)
-
-    if score > best_score:
-        LEARNED_PART = learn_from_dicts(key_store, threshold=1)
-        best_score = score
-        abort_counter = score
-        display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
-        print(LEARNED_PART)
-        print('I learned {} items...'.format(len(LEARNED_PART)))
-
-    if abort_counter == 0:
-        print('I am not getting better.')
-        if len(LEARNED_PART) != 0:
-            print('Let me forget something...')
-            print(LEARNED_PART)
-            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))  # forget items...
-            print(LEARNED_PART)
-            abort_counter = 100
-        else:
-            print('kthxbai.')
-            break
+# print('RAGE-QUIT-BRUTE-FORCING...')
+#
+# best_score = score_text(cyphertext)
+# key_store = []
+# LEARNED_PART = {}
+# abort_counter = 100
+# while True:
+#     leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
+#     leftover_doc_chars.remove(' ')
+#     leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
+#     leftover_eng_chars.remove(' ')
+#
+#     # doc chars complexity must be less or equal than eng chars (due to import restrictions)
+#     map_range = list(range(0, len(leftover_eng_chars)))
+#     random.shuffle(map_range)
+#     random_part = {}
+#     for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
+#         random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
+#
+#     random_key = KEY.copy()
+#     random_key.update(random_part)
+#     random_key.update(LEARNED_PART)
+#
+#     # dict_variance(random_key, level=1)
+#     text = apply_substitution_dictionary(cyphertext, random_key)
+#     score = score_text(text)
+#
+#     if score == best_score and score != 0:
+#         abort_counter -= 1
+#         print(abort_counter)
+#
+#     if score >= best_score:
+#         key_store.append(random_key)
+#
+#     if score > best_score:
+#         LEARNED_PART = learn_from_dicts(key_store, threshold=1)
+#         best_score = score
+#         abort_counter = score
+#         display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
+#         print(LEARNED_PART)
+#         print('I learned {} items...'.format(len(LEARNED_PART)))
+#
+#     if abort_counter == 0:
+#         print('I am not getting better.')
+#         if len(LEARNED_PART) != 0:
+#             print('Let me forget something...')
+#             print(LEARNED_PART)
+#             LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))  # forget items...
+#             print(LEARNED_PART)
+#             abort_counter = 100
+#         else:
+#             print('kthxbai.')
+#             break
