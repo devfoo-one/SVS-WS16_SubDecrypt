@@ -1,5 +1,5 @@
 """
-Takes an encrypted string (character substitution) as a command line argument, and tries to decrypt it automatically.
+Takes a encrypted file (character substitution) as a command line argument, and tries to decrypt it automatically.
 """
 import random
 import string
@@ -29,7 +29,7 @@ def get_first_commandline_argument():
     try:
         return sys.argv[1]
     except IndexError:
-        print("No cyphertext given. Please provide cyphertext as command line argument.")
+        print("No file given. Please provide file path as command line argument.")
         exit(1)
 
 
@@ -143,7 +143,7 @@ def score_text(text):
     """
     score = 0
     for word in text.split():
-        if word in ENGLISH_WORDS:
+        if word.lower() in ENGLISH_WORDS:
             score += len(word) ** 2  # the longer the word, the higher the score
     return score
 
@@ -160,7 +160,11 @@ def learn_from_dicts(dicts, threshold=4):
     for k in keys:
         values = []
         for d in dicts:
-            values.append(d[k])
+            try:
+                values.append(d[k])
+            except KeyError:
+                # This happens if the dictionaries do not share the same dimension.
+                continue
         sort = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)
         most_common_item_for_k = sort[0]
         try:
@@ -967,9 +971,8 @@ while True:
     if score > BEST_SCORE:
         LAST_KEY = random_key
         if len(KEY_STORE) > 1:
-            LEARNED_PART = learn_from_dicts(KEY_STORE, threshold=1)
+            LEARNED_PART = learn_from_dicts(KEY_STORE, threshold=2)
         BEST_SCORE = score
-        # abort_counter = score  # the later the brute force the longer the try...
         MOTIVATION += 3000
         display_fancy('BRUTE FORCE SCORE {}'.format(score), text, random_key)
         print('I´ve learned {} items. Motivation is {}.'.format(len(LEARNED_PART), MOTIVATION))
@@ -998,6 +1001,6 @@ while True:
                 MOTIVATION += 7000
             else:
                 print('As good as it gets. kthxbai.')
-            break
+                break
 
 display_fancy('FINAL', apply_substitution_dictionary(CYPHERTEXT, LAST_KEY), LAST_KEY)
