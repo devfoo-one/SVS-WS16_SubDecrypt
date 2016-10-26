@@ -78,7 +78,7 @@ def display_fancy(name, text, key):
     print()
     print('{:*^100}'.format(" " + name + " "))
     for c in key.values():
-        text = text.replace(c,c.upper())
+        text = text.replace(c, c.upper())
 
     while True:
         display = text[0:96]
@@ -210,11 +210,11 @@ def score_text(text):
     :param text:
     :return: Number of word matches
     """
-    hits = 0
+    score = 0
     for word in text.split():
         if word in COMMON_WORDS:
-            hits += 1
-    return hits
+            score += len(word)
+    return score
 
 
 def learn_from_dicts(dicts, threshold=4):
@@ -230,8 +230,13 @@ def learn_from_dicts(dicts, threshold=4):
         values = []
         for d in dicts:
             values.append(d[k])
-        most_common_item_for_k = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)[0]
-        if most_common_item_for_k[1] > threshold + mean(Counter(values).values()):
+        sort = sorted(Counter(values).items(), key=lambda x: x[1], reverse=True)
+        most_common_item_for_k = sort[0]
+        try:
+            next_most_common_item_for_k = sort[1]
+        except IndexError:
+            continue
+        if most_common_item_for_k[1] - next_most_common_item_for_k[1] >= threshold:
             retVal[k] = most_common_item_for_k[0]
     return retVal
 
@@ -246,7 +251,7 @@ def dict_variance(d, level=1):
     d_keys = list(d.keys())
     random.shuffle(d_keys)
     for i in range(0, level):
-        d[d_keys[i]], d[d_keys[i+1]] = d[d_keys[i+1]], d[d_keys[i]]
+        d[d_keys[i]], d[d_keys[i + 1]] = d[d_keys[i + 1]], d[d_keys[i]]
     return d
 
 
@@ -270,99 +275,148 @@ FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 
                         'much', 'some', 'time']
 
 # https://github.com/first20hours/google-10000-english
-COMMON_WORDS = ['that', 'this', 'with', 'from', 'your', 'have', 'more', 'will', 'home', 'page', 'free', 'time', 'they',
-                'site', 'what', 'news', 'only', 'when', 'here', 'also', 'help', 'view', 'been', 'were', 'some', 'like',
-                'than', 'find', 'date', 'back', 'list', 'name', 'just', 'over', 'year', 'into', 'next', 'used', 'work',
-                'last', 'most', 'data', 'make', 'them', 'post', 'city', 'such', 'best', 'then', 'good', 'well', 'info',
-                'high', 'each', 'very', 'book', 'read', 'need', 'many', 'user', 'said', 'does', 'mail', 'full', 'life',
-                'know', 'days', 'part', 'real', 'item', 'ebay', 'must', 'made', 'line', 'send', 'type', 'take', 'area',
-                'want', 'long', 'code', 'show', 'even', 'much', 'sign', 'file', 'link', 'open', 'case', 'same', 'both',
-                'game', 'care', 'down', 'size', 'shop', 'text', 'rate', 'form', 'love', 'john', 'main', 'call', 'save',
-                'york', 'card', 'jobs', 'food', 'sale', 'teen', 'room', 'join', 'west', 'look', 'left', 'team', 'week',
-                'note', 'live', 'june', 'plan', 'cost', 'july', 'test', 'come', 'cart', 'play', 'less', 'blog', 'park',
-                'side', 'give', 'sell', 'body', 'east', 'club', 'road', 'gift', 'hard', 'four', 'blue', 'easy', 'star',
-                'hand', 'keep', 'baby', 'term', 'film', 'head', 'cell', 'self', 'away', 'once', 'sure', 'cars', 'tell',
-                'able', 'gold', 'arts', 'past', 'five', 'upon', 'says', 'land', 'done', 'ever', 'word', 'bill', 'talk',
-                'kids', 'true', 'else', 'mark', 'rock', 'tips', 'plus', 'auto', 'edit', 'fast', 'fact', 'unit', 'tech',
-                'meet', 'feel', 'bank', 'risk', 'town', 'girl', 'toys', 'golf', 'loan', 'wide', 'sort', 'half', 'step',
-                'none', 'paul', 'lake', 'sony', 'fire', 'chat', 'html', 'loss', 'face', 'base', 'near', 'stay', 'turn',
-                'mean', 'king', 'copy', 'drug', 'pics', 'cash', 'seen', 'port', 'stop', 'soon', 'held', 'mind', 'lost',
-                'tour', 'menu', 'hope', 'wish', 'role', 'came', 'fine', 'hour', 'bush', 'huge', 'kind', 'move', 'logo',
-                'nice', 'sent', 'band', 'lead', 'went', 'mode', 'fund', 'male', 'took', 'song', 'cnet', 'late', 'fall',
-                'idea', 'tool', 'hill', 'maps', 'deal', 'hold', 'safe', 'feed', 'hall', 'anti', 'ship', 'paid', 'hair',
-                'tree', 'thus', 'wall', 'wine', 'vote', 'ways', 'rule', 'told', 'feet', 'door', 'cool', 'asia', 'uses',
-                'java', 'pass', 'fees', 'skin', 'prev', 'mary', 'ring', 'iraq', 'boys', 'deep', 'rest', 'pool', 'mini',
-                'fish', 'pack', 'born', 'race', 'debt', 'core', 'sets', 'wood', 'rent', 'dark', 'host', 'isbn', 'fair',
-                'ohio', 'gets', 'dead', 'mike', 'trip', 'poor', 'eyes', 'farm', 'lord', 'hear', 'goes', 'wife', 'hits',
-                'zone', 'jack', 'flat', 'flow', 'path', 'laws', 'skip', 'diet', 'army', 'gear', 'lots', 'firm', 'jump',
-                'dvds', 'ball', 'goal', 'sold', 'wind', 'palm', 'pain', 'xbox', 'oral', 'ford', 'edge', 'root', 'pink',
-                'shot', 'cold', 'foot', 'mass', 'heat', 'wild', 'miss', 'task', 'soft', 'fuel', 'walk', 'wait', 'rose',
-                'pick', 'load', 'tags', 'guys', 'drop', 'rich', 'ipod', 'seem', 'hire', 'gave', 'ones', 'rank', 'kong',
-                'died', 'inch', 'snow', 'camp', 'fill', 'gone', 'fort', 'gene', 'disc', 'boat', 'icon', 'ends', 'cast',
-                'felt', 'soul', 'aids', 'flag', 'atom', 'iron', 'void', 'disk', 'desk', 'dave', 'hong', 'vice', 'duty',
-                'bear', 'gain', 'lack', 'iowa', 'knew', 'zoom', 'blow', 'clip', 'wire', 'tape', 'spam', 'acid', 'cent',
-                'null', 'zero', 'roll', 'bath', 'font', 'beta', 'fail', 'jazz', 'bags', 'wear', 'rare', 'bars', 'dual',
-                'rise', 'bird', 'lady', 'fans', 'dell', 'seat', 'bids', 'toll', 'cape', 'mine', 'whom', 'math', 'dogs',
-                'moon', 'fear', 'wars', 'kept', 'beat', 'arms', 'utah', 'hide', 'slow', 'faqs', 'nine', 'eric', 'spot',
-                'grow', 'rain', 'onto', 'diff', 'bass', 'hole', 'pets', 'ride', 'pair', 'runs', 'yeah', 'evil', 'euro',
-                'peak', 'salt', 'bell', 'jeff', 'lane', 'kill', 'ages', 'plug', 'cook', 'perl', 'bike', 'lose', 'seek',
-                'tony', 'kits', 'soil', 'matt', 'exit', 'iran', 'keys', 'wave', 'holy', 'acts', 'mesh', 'dean', 'poll',
-                'unix', 'bond', 'jean', 'visa', 'pure', 'lens', 'draw', 'warm', 'babe', 'crew', 'legs', 'rear', 'node',
-                'lock', 'mile', 'mens', 'bowl', 'tank', 'navy', 'dish', 'adam', 'slot', 'gray', 'demo', 'hate', 'rice',
-                'loop', 'gary', 'vary', 'rome', 'arab', 'milk', 'boot', 'push', 'misc', 'alan', 'dear', 'beer', 'jose',
-                'jane', 'earn', 'twin', 'dont', 'bits', 'suit', 'chip', 'char', 'echo', 'grid', 'voip', 'pull', 'nasa',
-                'nick', 'plot', 'pump', 'anne', 'exam', 'ryan', 'beds', 'grey', 'bold', 'scan', 'aged', 'bulk', 'pmid',
-                'cute', 'para', 'seed', 'peer', 'meat', 'alex', 'bang', 'bone', 'bugs', 'gate', 'tone', 'busy', 'neck',
-                'wing', 'tiny', 'rail', 'tube', 'belt', 'luck', 'dial', 'gang', 'cake', 'semi', 'andy', 'cafe', 'till',
-                'shoe', 'sand', 'seal', 'lies', 'pipe', 'deck', 'thin', 'sick', 'dose', 'lets', 'cats', 'greg', 'folk',
-                'okay', 'hist', 'lift', 'lisa', 'mall', 'fell', 'yard', 'sean', 'pour', 'tion', 'dust', 'wiki', 'kent',
-                'adds', 'ward', 'roof', 'kiss', 'rush', 'mpeg', 'yoga', 'lamp', 'rico', 'phil', 'http', 'glad', 'wins',
-                'rack', 'boss', 'ross', 'anna', 'solo', 'tall', 'pdas', 'nova', 'wake', 'drum', 'foto', 'ease', 'tabs',
-                'pine', 'tend', 'gulf', 'rick', 'hunt', 'thai', 'fred', 'mill', 'burn', 'labs', 'sole', 'laid', 'clay',
-                'weak', 'blvd', 'wise', 'odds', 'marc', 'sons', 'leaf', 'cuba', 'silk', 'kate', 'wolf', 'fits', 'kick',
-                'meal', 'hurt', 'slip', 'cuts', 'mars', 'caps', 'pill', 'meta', 'mint', 'spin', 'wash', 'aims', 'ieee',
-                'corp', 'soap', 'axis', 'guns', 'hero', 'punk', 'duke', 'pace', 'wage', 'dawn', 'carl', 'coat', 'rica',
-                'doll', 'peru', 'nike', 'reed', 'mice', 'temp', 'vast', 'wrap', 'mood', 'quiz', 'beam', 'tops', 'shut',
-                'ncaa', 'thou', 'mask', 'coal', 'lion', 'goto', 'neil', 'beef', 'hats', 'surf', 'hook', 'cord', 'crop',
-                'lite', 'sing', 'tons', 'hang', 'hood', 'fame', 'eggs', 'ruby', 'mins', 'stem', 'drew', 'tune', 'corn',
-                'puts', 'grew', 'trek', 'ties', 'brad', 'jury', 'tail', 'lawn', 'soup', 'byte', 'nose', 'oclc', 'juan',
-                'thru', 'jews', 'trim', 'espn', 'quit', 'lung', 'todd', 'doug', 'sees', 'bull', 'cole', 'mart', 'tale',
-                'lynn', 'docs', 'coin', 'fake', 'cure', 'arch', 'hdtv', 'asin', 'bomb', 'harm', 'deer', 'oven', 'noon',
-                'cams', 'joel', 'proc', 'mate', 'chef', 'isle', 'slim', 'luke', 'comp', 'pete', 'spec', 'penn', 'midi',
-                'tied', 'dale', 'oils', 'sept', 'unto', 'pays', 'lang', 'stud', 'fold', 'phys', 'pole', 'mega', 'bend',
-                'moms', 'glen', 'lips', 'pond', 'tire', 'chad', 'josh', 'drag', 'ripe', 'rely', 'scsi', 'nuts', 'nail',
-                'span', 'joke', 'univ', 'pads', 'inns', 'cups', 'foam', 'poem', 'asks', 'bean', 'bias', 'swim', 'nano',
-                'loud', 'rats', 'stat', 'cruz', 'bios', 'thee', 'ruth', 'pray', 'pope', 'jeep', 'bare', 'hung', 'mono',
-                'tile', 'apps', 'ciao', 'knee', 'prep', 'chem', 'pros', 'cant', 'sara', 'joan', 'duck', 'dive', 'fiji',
-                'audi', 'raid', 'volt', 'dirt', 'acer', 'dist', 'geek', 'xnxx', 'sink', 'grip', 'watt', 'pins', 'reno',
-                'polo', 'horn', 'prot', 'frog', 'logs', 'snap', 'jpeg', 'swap', 'flip', 'buzz', 'nuke', 'boom', 'calm',
-                'fork', 'troy', 'zope', 'gmbh', 'sims', 'tray', 'sage', 'suse', 'cave', 'wool', 'eyed', 'grab', 'oops',
-                'trap', 'fool', 'karl', 'dies', 'jail', 'ipaq', 'comm', 'lace', 'ugly', 'hart', 'ment', 'biol', 'rows',
-                'treo', 'gods', 'poly', 'ears', 'fist', 'mere', 'cons', 'taxi', 'worn', 'shaw', 'expo', 'deny', 'bali',
-                'judy', 'trio', 'cube', 'rugs', 'fate', 'gras', 'oval', 'soma', 'href', 'benz', 'wifi', 'tier', 'earl',
-                'guam', 'cite', 'mess', 'rope', 'dump', 'hose', 'pubs', 'mild', 'clan', 'sync', 'mesa', 'hull', 'shed',
-                'memo', 'tide', 'funk', 'reel', 'bind', 'rand', 'buck', 'usgs', 'acre', 'lows', 'aqua', 'chen', 'emma',
-                'pest', 'reef', 'chan', 'beth', 'jill', 'sofa', 'dans', 'viii', 'tent', 'dept', 'hack', 'dare', 'hawk',
-                'lamb', 'junk', 'lucy', 'hans', 'poet', 'epic', 'sake', 'sans', 'lean', 'dude', 'luis', 'alto', 'gore',
-                'cult', 'dash', 'cage', 'divx', 'hugh', 'jake', 'eval', 'ping', 'flux', 'muze', 'oman', 'rage', 'adsl',
-                'prix', 'avon', 'rays', 'walt', 'acne', 'libs', 'undo', 'dana', 'halo', 'gays', 'exec', 'maui', 'vids',
-                'yale', 'doom', 'owen', 'bite', 'issn', 'myth', 'weed', 'oecd', 'dice', 'quad', 'dock', 'mods', 'hint',
-                'msie', 'buys', 'pork', 'barn', 'fare', 'asus', 'bald', 'fuji', 'leon', 'mold', 'dame', 'herb', 'alot',
-                'idle', 'cove', 'casa', 'eden', 'incl', 'reid', 'flex', 'rosa', 'hash', 'lazy', 'carb', 'pens', 'worm',
-                'deaf', 'mats', 'blah', 'mime', 'feof', 'usda', 'keen', 'peas', 'urls', 'owns', 'zinc', 'guru', 'levy',
-                'grad', 'bras', 'kyle', 'pale', 'gaps', 'tear', 'nest', 'nato', 'gale', 'stan', 'idol', 'moss', 'cork',
-                'mali', 'dome', 'heel', 'yang', 'dumb', 'feat', 'ntsc', 'usps', 'conf', 'glow', 'oaks', 'erik', 'paso',
-                'norm', 'ware', 'jade', 'foul', 'keno', 'seas', 'pose', 'mrna', 'goat', 'sail', 'sega', 'cdna', 'bolt',
-                'gage', 'urge', 'smtp', 'kurt', 'neon', 'ours', 'lone', 'cope', 'lime', 'kirk', 'bool', 'spas', 'jets',
-                'intl', 'yarn', 'knit', 'pike', 'hugo', 'gzip', 'ctrl', 'bent', 'laos', 'about', 'search', 'other',
-                'which', 'their', 'there', 'contact', 'business', 'online', 'first', 'would', 'services', 'these',
-                'click', 'service', 'price', 'people', 'state', 'email', 'health', 'world', 'products', 'music',
-                'should', 'product', 'system', 'policy', 'number', 'please', 'support', 'message', 'after', 'software',
-                'video', 'where', 'rights', 'public', 'books', 'school', 'through', 'links', 'review', 'years', 'order',
-                'privacy', 'items', 'company', 'group', 'under', 'general', 'research', 'january', 'reviews', 'program',
-                'games', 'could', 'great', 'united', 'hotel', 'center', 'store', 'travel', 'comments', 'report',
-                'member', 'details', 'terms', 'before', 'hotels', 'right', 'because', 'local', 'those', 'using',
-                'results', 'office', 'national', 'design', 'posted', 'internet', 'address', 'within', 'states', 'phone',
+COMMON_WORDS = ['the', 'and', 'for', 'that', 'this', 'with', 'you', 'not', 'are', 'from', 'your', 'all', 'have', 'new',
+                'more', 'was', 'will', 'home', 'can', 'page', 'has', 'free', 'but', 'our', 'one', 'time', 'they',
+                'site', 'may', 'what', 'news', 'out', 'use', 'any', 'see', 'only', 'his', 'when', 'here', 'who', 'web',
+                'also', 'now', 'help', 'get', 'view', 'been', 'how', 'were', 'some', 'its', 'like', 'than', 'find',
+                'date', 'back', 'top', 'had', 'list', 'name', 'just', 'over', 'year', 'day', 'into', 'two', 'next',
+                'used', 'work', 'last', 'most', 'buy', 'data', 'make', 'them', 'post', 'her', 'city', 'add', 'such',
+                'best', 'then', 'jan', 'good', 'well', 'info', 'high', 'each', 'she', 'very', 'book', 'read', 'need',
+                'many', 'user', 'said', 'does', 'set', 'mail', 'full', 'map', 'life', 'know', 'way', 'days', 'part',
+                'real', 'item', 'ebay', 'must', 'made', 'off', 'line', 'did', 'send', 'type', 'car', 'take', 'area',
+                'want', 'dvd', 'long', 'code', 'show', 'even', 'much', 'sign', 'file', 'link', 'open', 'case', 'same',
+                'own', 'both', 'game', 'care', 'down', 'end', 'him', 'per', 'big', 'law', 'size', 'art', 'shop', 'text',
+                'rate', 'usa', 'form', 'love', 'old', 'john', 'main', 'call', 'non', 'why', 'save', 'low', 'york',
+                'man', 'card', 'jobs', 'food', 'sale', 'job', 'teen', 'room', 'too', 'join', 'men', 'west', 'look',
+                'left', 'team', 'box', 'gay', 'week', 'note', 'live', 'june', 'air', 'plan', 'yes', 'hot', 'cost',
+                'say', 'july', 'test', 'come', 'dec', 'cart', 'san', 'play', 'tax', 'less', 'got', 'blog', 'let',
+                'park', 'side', 'act', 'red', 'give', 'sell', 'key', 'body', 'few', 'east', 'age', 'club', 'road',
+                'gift', 'hard', 'oct', 'pay', 'four', 'war', 'nov', 'blue', 'easy', 'fax', 'yet', 'star', 'hand', 'sun',
+                'rss', 'keep', 'baby', 'run', 'net', 'term', 'film', 'put', 'try', 'head', 'cell', 'self', 'away',
+                'once', 'log', 'sure', 'faq', 'cars', 'tell', 'able', 'fun', 'gold', 'feb', 'sep', 'arts', 'lot', 'ask',
+                'past', 'due', 'five', 'upon', 'says', 'mar', 'land', 'done', 'pro', 'url', 'aug', 'ever', 'ago',
+                'word', 'bill', 'apr', 'talk', 'via', 'kids', 'true', 'else', 'mark', 'rock', 'bad', 'tips', 'plus',
+                'auto', 'edit', 'fast', 'fact', 'unit', 'tech', 'meet', 'far', 'feel', 'bank', 'risk', 'jul', 'town',
+                'jun', 'girl', 'toys', 'golf', 'loan', 'wide', 'sort', 'half', 'step', 'none', 'paul', 'lake', 'sony',
+                'fire', 'chat', 'html', 'loss', 'face', 'oil', 'bit', 'base', 'near', 'stay', 'turn', 'mean', 'king',
+                'copy', 'drug', 'pics', 'cash', 'bay', 'seen', 'port', 'stop', 'bar', 'dog', 'soon', 'held', 'eur',
+                'mind', 'pdf', 'lost', 'tour', 'menu', 'hope', 'wish', 'role', 'came', 'usr', 'mon', 'com', 'fine',
+                'hour', 'gas', 'six', 'bush', 'pre', 'huge', 'sat', 'zip', 'bid', 'kind', 'move', 'logo', 'nice',
+                'sent', 'band', 'lead', 'went', 'fri', 'mode', 'fund', 'wed', 'male', 'took', 'inn', 'song', 'cnet',
+                'ltd', 'los', 'late', 'fall', 'idea', 'inc', 'win', 'tool', 'bed', 'hill', 'maps', 'deal', 'hold',
+                'tue', 'safe', 'feed', 'thu', 'sea', 'cut', 'hall', 'anti', 'tel', 'ship', 'paid', 'hair', 'kit',
+                'tree', 'thus', 'wall', 'boy', 'wine', 'vote', 'ways', 'est', 'son', 'rule', 'mac', 'iii', 'gmt', 'max',
+                'told', 'xml', 'feet', 'bin', 'door', 'cool', 'asia', 'uses', 'java', 'pass', 'van', 'fees', 'skin',
+                'prev', 'ads', 'mary', 'ring', 'pop', 'int', 'iraq', 'boys', 'deep', 'rest', 'hit', 'pool', 'mini',
+                'fish', 'eye', 'pack', 'born', 'race', 'usb', 'php', 'etc', 'debt', 'core', 'sets', 'wood', 'msn',
+                'fee', 'rent', 'las', 'dark', 'min', 'aid', 'host', 'isbn', 'fair', 'ohio', 'gets', 'fat', 'saw',
+                'dead', 'mike', 'trip', 'pst', 'poor', 'eyes', 'farm', 'tom', 'lord', 'sub', 'hear', 'goes', 'led',
+                'fan', 'wife', 'ten', 'hits', 'zone', 'cat', 'die', 'jack', 'flat', 'flow', 'path', 'laws', 'pet',
+                'guy', 'dev', 'cup', 'vol', 'skip', 'diet', 'army', 'gear', 'lee', 'lots', 'firm', 'jump', 'dvds',
+                'ball', 'goal', 'sold', 'wind', 'palm', 'bob', 'fit', 'met', 'pain', 'xbox', 'www', 'oral', 'ford',
+                'edge', 'root', 'ice', 'pink', 'shot', 'llc', 'sec', 'bus', 'cold', 'bag', 'foot', 'mass', 'ibm',
+                'heat', 'wild', 'miss', 'task', 'nor', 'bug', 'mid', 'soft', 'fuel', 'walk', 'wait', 'rose', 'jim',
+                'pick', 'del', 'load', 'tags', 'joe', 'guys', 'drop', 'cds', 'rich', 'ipod', 'seem', 'hire', 'gave',
+                'ones', 'rank', 'kong', 'died', 'inch', 'lab', 'cvs', 'snow', 'camp', 'des', 'fill', 'lcd', 'ave',
+                'gone', 'fort', 'gene', 'disc', 'boat', 'icon', 'ends', 'cast', 'felt', 'pic', 'soul', 'aids', 'flag',
+                'atom', 'iron', 'void', 'tag', 'mix', 'disk', 'vhs', 'fix', 'desk', 'dave', 'hong', 'vice', 'ray',
+                'duty', 'bear', 'gain', 'lack', 'iowa', 'dry', 'spa', 'knew', 'con', 'ups', 'zoom', 'blow', 'clip',
+                'wire', 'tape', 'spam', 'acid', 'cent', 'null', 'zero', 'roll', 'bath', 'var', 'font', 'beta', 'fail',
+                'won', 'jazz', 'bags', 'doc', 'wear', 'mom', 'rare', 'bars', 'row', 'dual', 'rise', 'usd', 'bird',
+                'lady', 'fans', 'eat', 'dell', 'seat', 'aim', 'bids', 'toll', 'les', 'cape', 'ann', 'tip', 'mine',
+                'whom', 'ski', 'math', 'dan', 'dogs', 'moon', 'fly', 'fear', 'wars', 'kept', 'hey', 'beat', 'bbc',
+                'arms', 'tea', 'avg', 'sky', 'utah', 'rom', 'hide', 'toy', 'slow', 'src', 'hip', 'faqs', 'nine', 'eric',
+                'spot', 'grow', 'dot', 'hiv', 'pda', 'rain', 'onto', 'dsl', 'zum', 'dna', 'diff', 'bass', 'hole',
+                'pets', 'ride', 'tim', 'sql', 'pair', 'don', 'runs', 'yeah', 'evil', 'gps', 'acc', 'euro', 'cap', 'ink',
+                'peak', 'salt', 'bell', 'pin', 'raw', 'gnu', 'jeff', 'ben', 'lane', 'kill', 'aol', 'ages', 'plug',
+                'cook', 'hat', 'perl', 'lib', 'bike', 'utc', 'der', 'lose', 'seek', 'tony', 'kits', 'cam', 'soil',
+                'wet', 'ram', 'matt', 'fox', 'exit', 'iran', 'arm', 'keys', 'wave', 'holy', 'acts', 'mesh', 'dean',
+                'poll', 'unix', 'bond', 'pub', 'jean', 'hop', 'visa', 'gun', 'pure', 'lens', 'draw', 'warm', 'babe',
+                'crew', 'legs', 'sam', 'pdt', 'rear', 'node', 'lock', 'mile', 'mens', 'bowl', 'ref', 'tank', 'navy',
+                'kid', 'pan', 'dish', 'adam', 'slot', 'psp', 'gray', 'und', 'demo', 'hate', 'rice', 'loop', 'nfl',
+                'gary', 'vary', 'rome', 'arab', 'milk', 'boot', 'push', 'iso', 'sum', 'misc', 'alan', 'dear', 'oak',
+                'vat', 'beer', 'jose', 'jane', 'sir', 'earn', 'kim', 'twin', 'dont', 'spy', 'bits', 'suit', 'chip',
+                'res', 'sit', 'wow', 'char', 'echo', 'que', 'grid', 'voip', 'fig', 'pull', 'nasa', 'tab', 'css', 'nick',
+                'plot', 'qty', 'pump', 'anne', 'bio', 'exam', 'ryan', 'beds', 'pcs', 'grey', 'bold', 'von', 'scan',
+                'aged', 'bulk', 'sci', 'edt', 'pmid', 'sin', 'cute', 'para', 'seed', 'peer', 'meat', 'ing', 'alex',
+                'bang', 'bone', 'bugs', 'ftp', 'med', 'gate', 'tone', 'busy', 'leg', 'neck', 'wing', 'abc', 'tiny',
+                'rail', 'jay', 'gap', 'tube', 'belt', 'biz', 'rob', 'era', 'gcc', 'asp', 'luck', 'dial', 'jet', 'par',
+                'gang', 'cake', 'mad', 'semi', 'andy', 'cafe', 'ken', 'exp', 'till', 'pen', 'shoe', 'sand', 'joy',
+                'cpu', 'ran', 'seal', 'jon', 'lies', 'pipe', 'ill', 'lbs', 'lay', 'lol', 'deck', 'thin', 'mph', 'sick',
+                'dose', 'bet', 'def', 'lets', 'cats', 'nba', 'greg', 'epa', 'ron', 'folk', 'org', 'okay', 'hist',
+                'lift', 'lisa', 'mall', 'dad', 'pat', 'fell', 'yard', 'sean', 'pour', 'reg', 'tion', 'dust', 'wiki',
+                'kent', 'adds', 'nsw', 'ear', 'pci', 'tie', 'ward', 'ian', 'roof', 'kiss', 'mod', 'bmw', 'rush', 'mpeg',
+                'yoga', 'lamp', 'rico', 'phil', 'cst', 'http', 'ceo', 'glad', 'wins', 'rack', 'rep', 'mit', 'boss',
+                'ross', 'anna', 'solo', 'tall', 'pdas', 'sri', 'toe', 'nova', 'api', 'wake', 'urw', 'lan', 'sms',
+                'drum', 'nec', 'foto', 'ease', 'tabs', 'pine', 'tend', 'gulf', 'rick', 'hunt', 'thai', 'fred', 'mill',
+                'den', 'aud', 'burn', 'labs', 'lie', 'crm', 'amp', 'sole', 'laid', 'clay', 'weak', 'usc', 'blvd', 'amd',
+                'wise', 'odds', 'eve', 'marc', 'sons', 'leaf', 'pad', 'rod', 'cuba', 'hrs', 'silk', 'kate', 'sad',
+                'wolf', 'cal', 'fits', 'kick', 'meal', 'hurt', 'pot', 'img', 'slip', 'rpm', 'cuts', 'pee', 'mars',
+                'tvs', 'egg', 'mhz', 'caps', 'pill', 'lat', 'meta', 'mint', 'spin', 'sur', 'wash', 'rev', 'aims',
+                'ieee', 'corp', 'soap', 'nyc', 'jam', 'axis', 'guns', 'rio', 'hero', 'punk', 'duke', 'pace', 'wage',
+                'arc', 'dawn', 'carl', 'coat', 'mrs', 'rica', 'app', 'roy', 'ion', 'doll', 'peru', 'nike', 'fed',
+                'reed', 'mice', 'ban', 'temp', 'zus', 'vast', 'ent', 'odd', 'wrap', 'mood', 'quiz', 'ext', 'beam',
+                'tops', 'amy', 'shut', 'ncaa', 'thou', 'phd', 'mask', 'coal', 'cry', 'zoo', 'aka', 'tee', 'lion',
+                'goto', 'neil', 'beef', 'cad', 'hats', 'tcp', 'surf', 'dir', 'hook', 'cord', 'val', 'crop', 'lite',
+                'ghz', 'hub', 'eng', 'ace', 'sing', 'tons', 'sue', 'hang', 'gbp', 'hood', 'chi', 'fame', 'rfc', 'seo',
+                'isp', 'ins', 'eggs', 'jpg', 'ruby', 'mins', 'ssl', 'stem', 'opt', 'drew', 'flu', 'mlb', 'rap', 'tune',
+                'corn', 'puts', 'grew', 'tin', 'trek', 'oem', 'ties', 'rat', 'brad', 'jury', 'dos', 'tail', 'lawn',
+                'soup', 'byte', 'nose', 'oclc', 'plc', 'juan', 'msg', 'cod', 'thru', 'jews', 'trim', 'gen', 'espn',
+                'nhl', 'quit', 'lung', 'gel', 'todd', 'doug', 'sees', 'aaa', 'bull', 'cole', 'mart', 'tale', 'lynn',
+                'std', 'docs', 'vid', 'coin', 'fake', 'fda', 'cure', 'arch', 'hdtv', 'asin', 'bomb', 'harm', 'thy',
+                'deer', 'tri', 'pal', 'mat', 'oven', 'ted', 'noon', 'gym', 'kde', 'cams', 'joel', 'proc', 'tan', 'mate',
+                'chef', 'isle', 'slim', 'luke', 'comp', 'alt', 'pie', 'cbs', 'pete', 'spec', 'bow', 'penn', 'midi',
+                'tied', 'hon', 'dale', 'oils', 'sept', 'unto', 'atm', 'pays', 'lang', 'stud', 'fold', 'cms', 'vic',
+                'pos', 'phys', 'pole', 'mega', 'bend', 'moms', 'glen', 'nav', 'cab', 'ist', 'lips', 'pond', 'dam',
+                'cnn', 'lil', 'das', 'tire', 'chad', 'sys', 'josh', 'drag', 'icq', 'ripe', 'rely', 'scsi', 'dns', 'pty',
+                'nuts', 'nail', 'span', 'sox', 'joke', 'univ', 'tub', 'pads', 'inns', 'cups', 'ash', 'ali', 'foam',
+                'tft', 'jvc', 'poem', 'cgi', 'asks', 'bean', 'bias', 'por', 'mem', 'tap', 'swim', 'nano', 'vii', 'bee',
+                'loud', 'rats', 'cfr', 'stat', 'cruz', 'bios', 'pmc', 'thee', 'ruth', 'pray', 'pope', 'jeep', 'bare',
+                'hung', 'mba', 'pit', 'mono', 'tile', 'apps', 'mag', 'gsm', 'ddr', 'rec', 'ciao', 'knee', 'prep',
+                'chem', 'ton', 'gif', 'pros', 'cant', 'gpl', 'irc', 'sara', 'bra', 'joan', 'duck', 'phi', 'mls', 'cow',
+                'dive', 'cet', 'fiji', 'audi', 'raid', 'ppc', 'volt', 'div', 'dirt', 'acer', 'dist', 'ons', 'geek',
+                'xnxx', 'sink', 'grip', 'avi', 'watt', 'pins', 'reno', 'ide', 'polo', 'rpg', 'horn', 'prot', 'frog',
+                'logs', 'tgp', 'leo', 'diy', 'snap', 'arg', 'geo', 'doe', 'jpeg', 'ati', 'wal', 'swap', 'abs', 'flip',
+                'sim', 'rna', 'buzz', 'nuke', 'rid', 'boom', 'calm', 'fork', 'troy', 'rip', 'zope', 'gmbh', 'buf',
+                'sims', 'tray', 'sol', 'sage', 'eco', 'bat', 'lip', 'sap', 'suse', 'cave', 'wool', 'ict', 'eyed',
+                'grab', 'oops', 'sku', 'trap', 'fool', 'karl', 'dies', 'pts', 'rrp', 'jail', 'ooo', 'ipaq', 'comm',
+                'nhs', 'aye', 'lace', 'ste', 'ugly', 'hart', 'ment', 'col', 'biol', 'rows', 'treo', 'gods', 'une',
+                'tex', 'cia', 'poly', 'ears', 'dod', 'fist', 'neo', 'mere', 'cons', 'dig', 'taxi', 'nat', 'dpi', 'gis',
+                'loc', 'worn', 'shaw', 'expo', 'deny', 'bali', 'judy', 'trio', 'cube', 'rugs', 'fate', 'gui', 'gras',
+                'ver', 'rim', 'zen', 'dis', 'kay', 'oval', 'soma', 'ser', 'href', 'benz', 'wifi', 'tier', 'fwd', 'earl',
+                'aus', 'hwy', 'guam', 'cite', 'nam', 'gdp', 'pig', 'mess', 'lit', 'una', 'ada', 'rope', 'dump', 'yrs',
+                'foo', 'gba', 'hose', 'sig', 'duo', 'fog', 'str', 'pubs', 'vip', 'yea', 'mild', 'fur', 'tar', 'soc',
+                'clan', 'sync', 'mesa', 'rug', 'hull', 'dem', 'wav', 'shed', 'memo', 'ham', 'tide', 'funk', 'fbi',
+                'reel', 'bind', 'rand', 'buck', 'tba', 'sie', 'usgs', 'acre', 'lows', 'aqua', 'chen', 'emma', 'eva',
+                'pest', 'rca', 'reef', 'gst', 'bon', 'chan', 'mas', 'beth', 'len', 'kai', 'dom', 'jill', 'sofa', 'obj',
+                'dans', 'viii', 'jar', 'tent', 'dept', 'hack', 'dare', 'hawk', 'lamb', 'cos', 'pac', 'erp', 'vpn',
+                'fcc', 'eds', 'junk', 'wax', 'lucy', 'hans', 'poet', 'epic', 'nut', 'sake', 'sans', 'irs', 'lean',
+                'bye', 'cdt', 'ana', 'dude', 'luis', 'alto', 'eau', 'mil', 'gore', 'cult', 'dash', 'cage', 'divx',
+                'hugh', 'lap', 'jake', 'eval', 'ping', 'flux', 'sao', 'muze', 'oman', 'gmc', 'rage', 'adsl', 'prix',
+                'avon', 'rays', 'asn', 'walt', 'acne', 'libs', 'undo', 'dana', 'halo', 'ppm', 'ant', 'gays', 'apt',
+                'exec', 'inf', 'eos', 'vcr', 'uri', 'gem', 'maui', 'psi', 'pct', 'vids', 'yale', 'qld', 'pas', 'doom',
+                'owen', 'bite', 'issn', 'myth', 'gig', 'sas', 'weed', 'oecd', 'dice', 'quad', 'dock', 'mods', 'hint',
+                'msie', 'liz', 'ccd', 'buys', 'pork', 'barn', 'llp', 'boc', 'fare', 'asus', 'bald', 'fuji', 'leon',
+                'mold', 'dame', 'herb', 'tmp', 'alot', 'ate', 'idle', 'fin', 'mud', 'uni', 'cove', 'casa', 'eden',
+                'incl', 'ala', 'dip', 'nbc', 'reid', 'flex', 'rosa', 'hash', 'lazy', 'mpg', 'carb', 'cas', 'cio', 'dow',
+                'upc', 'dui', 'pens', 'yen', 'worm', 'lid', 'deaf', 'mats', 'pvc', 'blah', 'mime', 'feof', 'usda',
+                'keen', 'peas', 'urls', 'enb', 'owns', 'til', 'wto', 'hay', 'zinc', 'guru', 'isa', 'levy', 'grad',
+                'bras', 'pix', 'mic', 'kyle', 'pale', 'gaps', 'tear', 'ata', 'nil', 'nest', 'pam', 'nato', 'cop',
+                'gale', 'dim', 'stan', 'idol', 'mai', 'abu', 'moss', 'cork', 'mali', 'mtv', 'dome', 'leu', 'heel',
+                'yang', 'lou', 'pgp', 'sip', 'dumb', 'dee', 'mae', 'mel', 'feat', 'ntsc', 'sic', 'usps', 'seq', 'conf',
+                'glow', 'wma', 'cir', 'oaks', 'erik', 'acm', 'paso', 'norm', 'ips', 'dsc', 'ware', 'mia', 'wan', 'jade',
+                'foul', 'keno', 'gtk', 'seas', 'pose', 'mrna', 'goat', 'ira', 'sen', 'sail', 'dts', 'sega', 'cdna',
+                'pod', 'bolt', 'gage', 'dat', 'soa', 'urge', 'smtp', 'kurt', 'neon', 'ours', 'lone', 'cope', 'lime',
+                'kirk', 'bool', 'cho', 'wit', 'bbs', 'spas', 'ind', 'jets', 'qui', 'intl', 'yarn', 'knit', 'mug',
+                'pike', 'ids', 'hugo', 'gzip', 'ctrl', 'bent', 'laos', 'about', 'search', 'other', 'which', 'their',
+                'there', 'contact', 'business', 'online', 'first', 'would', 'services', 'these', 'click', 'service',
+                'price', 'people', 'state', 'email', 'health', 'world', 'products', 'music', 'should', 'product',
+                'system', 'policy', 'number', 'please', 'support', 'message', 'after', 'software', 'video', 'where',
+                'rights', 'public', 'books', 'school', 'through', 'links', 'review', 'years', 'order', 'privacy',
+                'items', 'company', 'group', 'under', 'general', 'research', 'january', 'reviews', 'program', 'games',
+                'could', 'great', 'united', 'hotel', 'center', 'store', 'travel', 'comments', 'report', 'member',
+                'details', 'terms', 'before', 'hotels', 'right', 'because', 'local', 'those', 'using', 'results',
+                'office', 'national', 'design', 'posted', 'internet', 'address', 'within', 'states', 'phone',
                 'shipping', 'reserved', 'subject', 'between', 'forum', 'family', 'based', 'black', 'check', 'special',
                 'prices', 'website', 'index', 'being', 'women', 'today', 'south', 'project', 'pages', 'version',
                 'section', 'found', 'sports', 'house', 'related', 'security', 'county', 'american', 'photo', 'members',
@@ -937,7 +991,6 @@ display_fancy('INPUT', cyphertext, KEY)
 sep = get_top_chars(cyphertext, 1)[0]
 KEY[sep] = ' '
 cyphertext = apply_substitution_dictionary(cyphertext, KEY)
-# print(KEY)
 display_fancy('SPACE DETECTION', cyphertext, KEY)
 
 # find one char words
@@ -946,7 +999,7 @@ for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
         KEY[doc] = eng
 
 # find most common characters
-for doc, eng in zip(get_top_chars(cyphertext, n=6)[1:], FREQ_char_unigrams):
+for doc, eng in zip(get_top_chars(cyphertext, n=4)[1:], FREQ_char_unigrams):
     if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
@@ -1003,56 +1056,66 @@ display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY
 
 #####################################################
 
-# print('RAGE-QUIT-BRUTE-FORCING...')
-#
-# best_score = score_text(cyphertext)
-# key_store = []
-# LEARNED_PART = {}
-# abort_counter = 100
-# while True:
-#     leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
-#     leftover_doc_chars.remove(' ')
-#     leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
-#     leftover_eng_chars.remove(' ')
-#
-#     # doc chars complexity must be less or equal than eng chars (due to import restrictions)
-#     map_range = list(range(0, len(leftover_eng_chars)))
-#     random.shuffle(map_range)
-#     random_part = {}
-#     for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
-#         random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
-#
-#     random_key = KEY.copy()
-#     random_key.update(random_part)
-#     random_key.update(LEARNED_PART)
-#
-#     # dict_variance(random_key, level=1)
-#     text = apply_substitution_dictionary(cyphertext, random_key)
-#     score = score_text(text)
-#
-#     if score == best_score and score != 0:
-#         abort_counter -= 1
-#         print(abort_counter)
-#
-#     if score >= best_score:
-#         key_store.append(random_key)
-#
-#     if score > best_score:
-#         LEARNED_PART = learn_from_dicts(key_store, threshold=1)
-#         best_score = score
-#         abort_counter = score
-#         display_fancy('BRUTE FORCE SCORE {}'.format(score), text)
-#         print(LEARNED_PART)
-#         print('I learned {} items...'.format(len(LEARNED_PART)))
-#
-#     if abort_counter == 0:
-#         print('I am not getting better.')
-#         if len(LEARNED_PART) != 0:
-#             print('Let me forget something...')
-#             print(LEARNED_PART)
-#             LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))  # forget items...
-#             print(LEARNED_PART)
-#             abort_counter = 100
-#         else:
-#             print('kthxbai.')
-#             break
+print('RAGE-QUIT-BRUTE-FORCING...')
+
+best_score = score_text(cyphertext)
+key_store = []
+LEARNED_PART = {}
+abort_counter = 100
+LAST_KEY = None
+while True:
+    leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
+    leftover_doc_chars.remove(' ')
+    leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.items())).difference(LEARNED_PART.items()))
+    leftover_eng_chars.remove(' ')
+
+    # doc chars complexity must be less or equal than eng chars (due to import restrictions)
+    map_range = list(range(0, len(leftover_eng_chars)))
+    random.shuffle(map_range)
+    random_part = {}
+    for doc_n, eng_n in zip(range(0, len(leftover_doc_chars)), map_range):
+        random_part[leftover_doc_chars[doc_n]] = leftover_eng_chars[eng_n]
+
+    random_key = KEY.copy()
+    random_key.update(random_part)
+    random_key.update(LEARNED_PART)
+
+    # dict_variance(random_key, level=1)
+    text = apply_substitution_dictionary(cyphertext, random_key)
+    score = score_text(text)
+
+    if score == best_score and score != 0:
+        abort_counter -= 1
+        print(abort_counter)
+
+    if score >= best_score:
+        key_store.append(random_key)
+        LAST_KEY = random_key
+
+    if score > best_score:
+        LEARNED_PART = learn_from_dicts(key_store, threshold=2)
+        best_score = score
+        # abort_counter = score  # the later the brute force the longer the try...
+        abort_counter = 10  # the later the brute force the longer the try...
+        display_fancy('BRUTE FORCE SCORE {}'.format(score), text, random_key)
+        print('I learned {} items.'.format(len(LEARNED_PART)))
+
+    if abort_counter == 0:
+        print('I am not getting better.')
+        if len(LEARNED_PART) != 0:
+            print('Let me forget something...')
+            # forget 3 learned items and one frequency item...
+            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
+            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
+            LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
+            while True:
+                k = random.choice(list(KEY.keys()))
+                if KEY[k] != ' ':  # don´t remove word separator!
+                    KEY.pop(k)
+                    break
+            abort_counter = 10
+        else:
+            print('As good as it gets. KTHXBAI.')
+            break
+
+display_fancy('FINAL', apply_substitution_dictionary(cyphertext, LAST_KEY),LAST_KEY)
