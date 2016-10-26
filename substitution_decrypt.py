@@ -1006,7 +1006,7 @@ while True:
             LEARNED_PART.pop(random.choice(list(LEARNED_PART.keys())))
             lost = before.difference(set(LEARNED_PART.items())).pop()
             print('Let me forget that "{}" should be "{}" ({}).'.format(lost[0], lost[1], len(LEARNED_PART)))
-            MOTIVATION += 2000
+            MOTIVATION += 5000
         else:
             if len(KEY) > 1:
                 # forget one frequency item...
@@ -1019,7 +1019,7 @@ while True:
                 lost = before.difference(set(KEY.items())).pop()
                 print('I´ve completely forgot what i´ve recently learned.'
                       ' Let me forget that "{}" was "{}".'.format(lost[0], lost[1]))
-                MOTIVATION += 7000
+                MOTIVATION += 20000
             else:
                 print('As good as it gets. kthxbai.')
                 break
