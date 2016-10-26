@@ -143,7 +143,7 @@ def score_text(text):
     """
     score = 0
     for word in text.split():
-        if word in COMMON_WORDS:
+        if word in ENGLISH_WORDS:
             score += len(word) ** 2  # the longer the word, the higher the score
     return score
 
@@ -900,41 +900,41 @@ ENGLISH_WORDS = FREQ_words_one_char + FREQ_words_two_char + FREQ_words_three_cha
 
 """"------------------------------- FREQUENCY PART -------------------------------"""
 
-cyphertext = clean_text(get_text_from_file(get_first_commandline_argument()))
+CYPHERTEXT = clean_text(get_text_from_file(get_first_commandline_argument()))
 KEY = {}
-display_fancy('INPUT', cyphertext, KEY)
+display_fancy('INPUT', CYPHERTEXT, KEY)
 
 # try to find word separator
-sep = get_top_chars(cyphertext, 1)[0]
-cyphertext = apply_substitution_dictionary(cyphertext, {sep: ' '})
+sep = get_top_chars(CYPHERTEXT, 1)[0]
+CYPHERTEXT = apply_substitution_dictionary(CYPHERTEXT, {sep: ' '})
 KEY[' '] = ' '  # make fixed key entry for word separator
-display_fancy('SPACE DETECTION', cyphertext, KEY)
+display_fancy('SPACE DETECTION', CYPHERTEXT, KEY)
 
 # find one char words
-for doc, eng in zip(get_top_short_words(cyphertext, 1), FREQ_words_one_char):
+for doc, eng in zip(get_top_short_words(CYPHERTEXT, 1), FREQ_words_one_char):
     if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
 # find most common characters
-for doc, eng in zip(get_top_chars(cyphertext, n=4)[1:], FREQ_char_unigrams):
+for doc, eng in zip(get_top_chars(CYPHERTEXT, n=4)[1:], FREQ_char_unigrams):
     if doc not in KEY.keys() and eng not in KEY.values():
         KEY[doc] = eng
 
 # take the top 2 (seems good) most frequent three-char words
-for doc, eng in zip(get_top_short_words(cyphertext, length=3, n=2), FREQ_words_three_char):
+for doc, eng in zip(get_top_short_words(CYPHERTEXT, length=3, n=2), FREQ_words_three_char):
     if word_pattern(doc) == word_pattern(eng):
         for x, Y in zip(doc, eng):
             if x not in KEY.keys() and Y not in KEY.values():
                 KEY[x] = Y
 
-display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(cyphertext, KEY), KEY)
+display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(CYPHERTEXT, KEY), KEY)
 
 
 """"------------------------------- BRUTEFORCE PART -------------------------------"""
 
 
 print('RAGE-QUIT-BRUTE-FORCING...')
-BEST_SCORE = score_text(cyphertext)
+BEST_SCORE = score_text(CYPHERTEXT)
 KEY_STORE = []
 LEARNED_PART = {}
 MOTIVATION = 1000
@@ -942,9 +942,7 @@ LAST_KEY = KEY
 while True:
     MOTIVATION -= 1
     leftover_doc_chars = list(set(VALID_CHARS).difference(set(KEY.keys())).difference(LEARNED_PART.keys()))
-    # leftover_doc_chars.remove(' ')
     leftover_eng_chars = list(set(VALID_CHARS).difference(set(KEY.values())).difference(LEARNED_PART.values()))
-    # leftover_eng_chars.remove(' ')
 
     # doc chars complexity must be less or equal than eng chars (due to import restrictions)
     map_range = list(range(0, len(leftover_eng_chars)))
@@ -957,7 +955,7 @@ while True:
     random_key.update(random_part)
     random_key.update(LEARNED_PART)
 
-    text = apply_substitution_dictionary(cyphertext, random_key)
+    text = apply_substitution_dictionary(CYPHERTEXT, random_key)
     score = score_text(text)
 
     if score < BEST_SCORE:
@@ -972,7 +970,7 @@ while True:
             LEARNED_PART = learn_from_dicts(KEY_STORE, threshold=1)
         BEST_SCORE = score
         # abort_counter = score  # the later the brute force the longer the try...
-        MOTIVATION += 2000
+        MOTIVATION += 3000
         display_fancy('BRUTE FORCE SCORE {}'.format(score), text, random_key)
         print('I´ve learned {} items. Motivation is {}.'.format(len(LEARNED_PART), MOTIVATION))
 
@@ -1002,4 +1000,4 @@ while True:
                 print('As good as it gets. kthxbai.')
             break
 
-display_fancy('FINAL', apply_substitution_dictionary(cyphertext, LAST_KEY), LAST_KEY)
+display_fancy('FINAL', apply_substitution_dictionary(CYPHERTEXT, LAST_KEY), LAST_KEY)
