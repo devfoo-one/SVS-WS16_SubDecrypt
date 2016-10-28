@@ -1,6 +1,7 @@
 import string, random
 
-VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
+# VALID_CHARS = list(string.ascii_lowercase + ' .,-!?"')
+VALID_CHARS = list(string.ascii_lowercase + ' ')
 RANDOM_CHARS = list(VALID_CHARS)
 random.shuffle(RANDOM_CHARS)
 KEY = {c: k for c, k in zip(VALID_CHARS, RANDOM_CHARS)}
