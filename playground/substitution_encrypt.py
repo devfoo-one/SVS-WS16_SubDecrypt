@@ -8,8 +8,7 @@ KEY = {c: k for c, k in zip(VALID_CHARS, RANDOM_CHARS)}
 
 with open('../texts/crypto.txt',  mode='w', encoding='utf8', newline='') as outfile:
     for line in open('../texts/plain.txt'):
-        line = line.lower()
+        line = line.lower().strip()
         for char in line:
             if char in VALID_CHARS:
                 outfile.write(KEY[char])
-        outfile.write('\n')
