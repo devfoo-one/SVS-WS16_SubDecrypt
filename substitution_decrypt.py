@@ -50,7 +50,7 @@ def clean_text(text):
     return ret_val
 
 
-def apply_substitution_dictionary(cyphertext, key):
+def apply_substitution_dictionary(cyphertext, key, placeholder=False):
     """
     Applies substitution dictionary on cyphertext.
     :param cyphertext: String to decrypt
@@ -60,13 +60,16 @@ def apply_substitution_dictionary(cyphertext, key):
     ret_val = ""
     for c in cyphertext:
         if c in key.keys():
-            ret_val += key[c]
+            ret_val += key[c].upper()
         else:
-            ret_val += '#'
+            if placeholder:
+                ret_val += '#'
+            else:
+                ret_val += c
     return ret_val
 
 
-def display_fancy(name, text, key):
+def display_fancy(name, text):
     """
     Displays fancy box
     :param name: Box name
@@ -76,8 +79,6 @@ def display_fancy(name, text, key):
     print()
     name = str(name)
     print('{:*^100}'.format(" " + name + " "))
-    for c in key.values():
-        text = text.replace(c, c.upper())
 
     while True:
         display = text[0:96]
@@ -143,16 +144,17 @@ def score_text(text):
     :param text: String with words (separated by ' ')
     :return: Edit-Distance, the lower the better
     """
-    # words_list = text.split()
+    words_list = text.split()
     # score = len(words_list)
-    # for word in words_list:
-    #     if DICT.check(word):
-    #         score -= 1
-    # return score
-    score = 0
-    for word in text.split():
-        score += DICT.best_edit_distance(word)
+    score = len(text)
+    for word in words_list:
+        if DICT.check(word):
+            score -= len(word)
     return score
+    # score = 0
+    # for word in text.split():
+    #     score += DICT.best_edit_distance(word)
+    # return score
 
 
 def learn_from_dicts(dicts, threshold=4):
@@ -196,22 +198,23 @@ def learn_from_dicts(dicts, threshold=4):
     return retVal
 
 
-def check_for_valid_chars(word):
+def check_for_valid_chars(word, valid):
     """
     Returns True if word only contains valid chars
     :param word: String
+    :param valid: List of valid chars
     :return: boolean
     """
     word = str(word)
     for c in word:
-        if c not in VALID_CHARS:
+        if c not in valid:
             return False
     return True
 
 """"------------------------------- DATA PART -------------------------------"""
 
 # http://www.simonsingh.net/The_Black_Chamber/hintsandtips.html
-FREQ_char_unigrams = [' ', 'e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
+FREQ_char_unigrams = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u']
 FREQ_char_bigrams = ['th', 'er', 'on', 'an', 're', 'he', 'in', 'ed', 'nd', 'ha', 'at', 'en', 'es', 'of', 'or', 'nt',
                      'ea', 'ti', 'to', 'it', 'st', 'io', 'le', 'is', 'ou', 'ar', 'as', 'de', 'rt', 've']
 FREQ_char_trigrams = ['the', 'and', 'tha', 'ent', 'ion', 'tio', 'for', 'nde', 'has', 'nce', 'edt', 'tis', 'oft', 'sth',
@@ -232,95 +235,59 @@ FREQ_words_four_char = ['that', 'with', 'have', 'this', 'will', 'your', 'from', 
 """"------------------------------- FREQUENCY PART -------------------------------"""
 
 CYPHERTEXT = clean_text(get_text_from_file(get_first_commandline_argument()))
-KEY = {c: c for c in VALID_CHARS}
+KEY = {}
+# KEY = {c: c for c in VALID_CHARS}
 KEY_STORE = []
-display_fancy('INPUT', CYPHERTEXT, KEY)
-
-# # find word separator
-# sep = get_top_chars(CYPHERTEXT, 1)[0]
-# KEY[' '], KEY[sep] = KEY[sep], KEY[' '],
-# CYPHERTEXT = apply_substitution_dictionary(CYPHERTEXT, KEY)
-# # KEY[' '] = ' '  # make fixed key entry for word separator
-# display_fancy('SPACE DETECTION', CYPHERTEXT, KEY)
-# KEY_STORE.append(KEY)
+display_fancy('INPUT', CYPHERTEXT)
+sep = get_top_chars(CYPHERTEXT, n=1)[0]
+CYPHERTEXT = apply_substitution_dictionary(CYPHERTEXT, {sep: ' '})
+VALID_CHARS.remove(' ')
+display_fancy('SPACE DETECTION', CYPHERTEXT)
 
 
 # find most common characters
-temp_key = {}
-for doc, eng in zip(get_top_chars(CYPHERTEXT, n=6), FREQ_char_unigrams):
-    if doc not in temp_key.keys() and eng not in temp_key.values():
-        temp_key[doc] = eng
-KEY_STORE.append(temp_key)
-KEY_STORE.append(temp_key)
-KEY_STORE.append(temp_key)
+for doc, eng in zip(get_top_chars(CYPHERTEXT, n=5)[1:], FREQ_char_unigrams):
+    KEY[doc], KEY[eng] = eng, doc
+# add key two times to give more weight
+KEY_STORE.append(KEY)
+# KEY_STORE.append(KEY)
 
-
-
-# find one char words
-temp_key = {}
-for doc, eng in zip(get_top_short_words(CYPHERTEXT, 1), FREQ_words_one_char):
-    if doc not in temp_key.keys() and eng not in temp_key.values():
-        temp_key[doc] = eng
-KEY_STORE.append(temp_key)
-KEY_STORE.append(temp_key)
-KEY_STORE.append(temp_key)
-
-# find two char words
-temp_key = {}
-for doc, eng in zip(get_top_short_words(CYPHERTEXT, 2)[:2], FREQ_words_two_char):
-    for x, Y in zip(doc, eng):
-        if x not in temp_key.keys() and Y not in temp_key.values():
-            temp_key[x] = Y
-KEY_STORE.append(temp_key)
-
-# find three char words
-temp_key = {}
-for doc, eng in zip(get_top_short_words(CYPHERTEXT, 3)[:2], FREQ_words_three_char):
-    for x, Y in zip(doc, eng):
-        if x not in temp_key.keys() and Y not in temp_key.values():
-            temp_key[x] = Y
-KEY_STORE.append(temp_key)
-
-LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=2)
-print(LEARNED_KEY)
-assert (len(list(LEARNED_KEY.values())) == len(set(LEARNED_KEY.values())))
-display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY), LEARNED_KEY)
-
-# cypher_tokens = CYPHERTEXT.split()
-# cypher_tokens = list(set(cypher_tokens))
-cypher_tokens = set()
-for c in apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY).split():
-    if len(c) < 100:
-        cypher_tokens.add(c)
-cypher_tokens = list(cypher_tokens)
-cypher_tokens.sort(key=lambda x: len(x), reverse=False)
+assert (len(list(KEY.values())) == len(set(KEY.values())))
+display_fancy('FREQUENCY STAGE 1', apply_substitution_dictionary(CYPHERTEXT, KEY))
+LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
 BEST_SCORE = score_text(apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY))
-errors_learned = BEST_SCORE
-for cypher_token in cypher_tokens:
-    for candidate in DICT.suggest(apply_substitution_dictionary(cypher_token, LEARNED_KEY)):
+while BEST_SCORE > 0:
+    cypher_tokens = CYPHERTEXT.split()
+    cypher_tokens = list(set(cypher_tokens))
+    LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
+    cypher_tokens.sort(key=lambda x: len(x), reverse=True)
+    # BEST_KEY = {}
+    for cypher_token in cypher_tokens:
         TEST_KEY = LEARNED_KEY.copy()
-        if check_for_valid_chars(candidate):
-            for cypher_char, candidate_char in zip(cypher_token, candidate):
-                if candidate_char in TEST_KEY.values():
-                    pass
-                    TEST_KEY.pop(list(TEST_KEY.keys())[list(TEST_KEY.values()).index(candidate_char)])
-                TEST_KEY[cypher_char] = candidate_char
+        for candidate in DICT.suggest(apply_substitution_dictionary(cypher_token, TEST_KEY)):
+            if check_for_valid_chars(candidate, VALID_CHARS):
+                CYPHERTEXT_testkey_before = apply_substitution_dictionary(CYPHERTEXT, TEST_KEY)
+                for cypher_char, candidate_char in zip(cypher_token, candidate):
+                    if candidate_char in TEST_KEY.values():
+                        TEST_KEY.pop(list(TEST_KEY.keys())[list(TEST_KEY.values()).index(candidate_char)])
+                    TEST_KEY[cypher_char] = candidate_char
 
-            # check key for double target values
-            assert (len(list(TEST_KEY.values())) == len(set(TEST_KEY.values())))
+                    # check key for double target values
+                    assert (len(list(TEST_KEY.values())) == len(set(TEST_KEY.values())))
 
-            # compare new test key with learned key
-            CYPHERTEXT_testkey = apply_substitution_dictionary(CYPHERTEXT, TEST_KEY)
-            errors_test = score_text(CYPHERTEXT_testkey)
-            print(CYPHERTEXT_testkey[:2])
-            display_fancy('{} -> {} ({})'.format(cypher_token, candidate, errors_test), CYPHERTEXT_testkey, TEST_KEY)
-            # if errors_test < BEST_SCORE:
-            if errors_test < errors_learned:
-                # BEST_SCORE = errors_test
-                KEY_STORE.append(TEST_KEY)
-                LEARNED_KEY = (learn_from_dicts(KEY_STORE, threshold=1))
-                assert (len(list(LEARNED_KEY.values())) == len(set(LEARNED_KEY.values())))
-                CYPHERTEXT_learnedkey = apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY)
-                errors_learned=score_text(CYPHERTEXT_learnedkey)
-                display_fancy('GOT BETTER!', CYPHERTEXT_learnedkey, LEARNED_KEY)
-                continue
+                    # compare new test key with learned key
+                    CYPHERTEXT_testkey_after = apply_substitution_dictionary(CYPHERTEXT, TEST_KEY)
+                    errors_before = score_text(CYPHERTEXT_testkey_before)
+                    errors_after = score_text(CYPHERTEXT_testkey_after)
+
+                    # display_fancy('BEST KEY', apply_substitution_dictionary(CYPHERTEXT, BEST_KEY))
+                    # display_fancy('{} -> {} ({}, {} keys)'.format(cypher_token, candidate, errors_after, len(KEY_STORE)), CYPHERTEXT_testkey_after)
+                    # if errors_after < errors_before:
+                    if errors_after <= BEST_SCORE:
+                        BEST_SCORE = errors_after
+                        # BEST_KEY = TEST_KEY.copy()
+                        KEY_STORE.append(TEST_KEY.copy())
+                        LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
+                        display_fancy('GOT BETTER! (SCORE {})'.format(BEST_SCORE), apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY))
+    KEY_STORE = []
+    CYPHERTEXT = apply_substitution_dictionary(CYPHERTEXT,LEARNED_KEY)

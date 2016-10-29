@@ -4,9 +4,6 @@ import editdistance
 
 class Dictionary:
     __words_by_pattern__ = defaultdict(set)
-    __best_edit_distance_cache__ = {}
-    calls = 0
-
 
     def __init__(self, path_to_wordlist):
         with open(path_to_wordlist) as dict_file:
@@ -23,6 +20,7 @@ class Dictionary:
         :param query: word
         :return: True/False if found or not
         """
+        query = query.lower()
         words_matching_query_pattern = self.__words_by_pattern__[self.word_pattern_of(query)]
         return query in words_matching_query_pattern
 
@@ -32,6 +30,7 @@ class Dictionary:
         :param query: String, word
         :return: list with suggestions, best word first
         """
+        query = query.lower()
         candidates = self.__words_by_pattern__[self.word_pattern_of(query)]
         candidates_weighted = []
         for i in candidates:
@@ -46,26 +45,13 @@ class Dictionary:
         :param query: String, word
         :return: Integer
         """
-        try:
-            return self.__best_edit_distance_cache__[query]
-        except KeyError:
-            best_matches = self.suggest(query)
+        query = query.lower()
+        best_matches = self.suggest(query)
         if len(best_matches) != 0:
-            self.__best_edit_distance_cache__[query] = editdistance.eval(query.lower(), best_matches[0])
+            return editdistance.eval(query.lower(), best_matches[0])
         else:
-            self.__best_edit_distance_cache__[query] = len(query)
+            return len(query) * 10
 
-
-
-        self.calls += 1
-        cache_size = len(self.__best_edit_distance_cache__)
-        if self.calls - cache_size > 0:
-            print('{} answered from cache'.format(self.calls - cache_size))
-
-
-
-
-        return self.__best_edit_distance_cache__[query]
 
     def word_pattern_of(self, word):
         """
@@ -73,6 +59,7 @@ class Dictionary:
         :param word: String, word
         :return: word pattern tuple
         """
+        word = word.lower()
         chars = []
         ret_val = []
         for c in word:
