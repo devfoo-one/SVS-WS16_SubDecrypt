@@ -230,7 +230,7 @@ while True:
         BEST_SCORE = score_text(apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY), fine=True)
     else:
         BEST_SCORE = score_text(apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY), fine=False)
-
+    INITIAL_SCORE = BEST_SCORE
     cypher_tokens.sort(key=lambda x: len(x), reverse=True)
     LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
     assert (len(list(LEARNED_KEY.values())) == len(set(LEARNED_KEY.values())))
@@ -238,11 +238,15 @@ while True:
     for cypher_token in cypher_tokens:
         TEST_KEY = LEARNED_KEY.copy()
         if second_iteration:
-            candidates = DICT.suggest(apply_substitution_dictionary(cypher_token, TEST_KEY))[:5]
+            query = apply_substitution_dictionary(cypher_token, TEST_KEY)
+            if DICT.check(query):
+                continue
+            else:
+                candidates = DICT.suggest(query)[:20]
         else:
-            candidates = DICT.suggest(apply_substitution_dictionary(cypher_token, TEST_KEY))
+            candidates = DICT.suggest(apply_substitution_dictionary(cypher_token, TEST_KEY))[:400]
 
-        for candidate in DICT.suggest(apply_substitution_dictionary(cypher_token, TEST_KEY)):
+        for candidate in candidates:
             if check_for_valid_chars(candidate, VALID_CHARS):
                 for cypher_char, candidate_char in zip(cypher_token, candidate):
                     if candidate_char in TEST_KEY.values():
@@ -250,19 +254,22 @@ while True:
                     TEST_KEY[cypher_char] = candidate_char
                     assert (len(list(TEST_KEY.values())) == len(set(TEST_KEY.values())))
 
-                    CYPHERTEXT_testkey = apply_substitution_dictionary(CYPHERTEXT, TEST_KEY)
-                    if second_iteration:
-                        errors_testkey = score_text(CYPHERTEXT_testkey, fine=True)
-                    else:
-                        errors_testkey = score_text(CYPHERTEXT_testkey, fine=False)
+                CYPHERTEXT_testkey = apply_substitution_dictionary(CYPHERTEXT, TEST_KEY)
+                if second_iteration:
+                    errors_testkey = score_text(CYPHERTEXT_testkey, fine=True)
+                else:
+                    errors_testkey = score_text(CYPHERTEXT_testkey, fine=False)
 
-                    if errors_testkey <= BEST_SCORE:
+                if errors_testkey <= BEST_SCORE:
+                    KEY_STORE.append(TEST_KEY.copy())
+                    LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
+                    if errors_testkey < BEST_SCORE:
                         KEY_STORE.append(TEST_KEY.copy())
                         LEARNED_KEY = learn_from_dicts(KEY_STORE, threshold=1)
-                        if errors_testkey < BEST_SCORE:
-                            BEST_SCORE = errors_testkey
-                            display_fancy('GOT BETTER! (SCORE {})'.format(BEST_SCORE),
-                                          apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY))
+                        BEST_SCORE = errors_testkey
+                        display_fancy(
+                            'GOT BETTER! ({}) {} -> {}'.format(INITIAL_SCORE / BEST_SCORE, cypher_token, candidate),
+                            apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY))
 
     if second_iteration:
         display_fancy('FINAL'.format(BEST_SCORE), apply_substitution_dictionary(CYPHERTEXT, LEARNED_KEY))
